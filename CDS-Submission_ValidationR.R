@@ -134,7 +134,7 @@ if (all(expected_sheets%in%sheet_names)){
 
 #If any sheet is missing, throw an overt error message then stops the process. This script pulls information from the expected sheets and requires all sheets present before running.
 
-template_warning=".\n\n##################################################################################################################\n#                                                                                                                #\n# Please obtain a new data template with all sheets and columns present before making further edits to this one. #\n#                                                                                                                #\n##################################################################################################################\n\n\n"
+template_warning="\n\n##################################################################################################################\n#                                                                                                                #\n# Please obtain a new data template with all sheets and columns present before making further edits to this one. #\n#                                                                                                                #\n##################################################################################################################\n\n\n"
 
 if (sheet_gone==1){
   stop(paste("\nThe following sheet(s) is/are missing in the template file: ",paste(expected_sheets[!expected_sheets%in%sheet_names],collapse = ", "), template_warning, sep = ""), call.=FALSE)
