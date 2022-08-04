@@ -5,7 +5,9 @@ This R Script takes a data file that is formatted to the submission template for
 
 To run the script on a CDS v1.3 template, run the following command in a terminal where R is installed.
 
-```Rscript --vanilla CDS-Submission_ValidationR.R --help                                                             
+```
+Rscript --vanilla CDS-Submission_ValidationR.R --help    
+
 Usage: CDS-Submission_ValidationR.R [options]
 
 CDS-Submission_ValidationR v.1.3.3
