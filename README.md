@@ -20,4 +20,4 @@ Options:
 		dataset template file, CDS_submission_metadata_template-v1.3.xlsx
 
 	-h, --help
-		Show this help message and exit```
+		Show this help message and exit
