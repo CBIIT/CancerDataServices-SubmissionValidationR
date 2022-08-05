@@ -26,7 +26,7 @@ list_of_packages=c("tidyverse","readr","stringi","janitor","readxl","optparse")
 
 #Based on the packages that are present, install ones that are required.
 new.packages <- list_of_packages[!(list_of_packages %in% installed.packages()[,"Package"])]
-if(length(new.packages)) install.packages(new.packages)
+suppressMessages(if(length(new.packages)) install.packages(new.packages))
 
 #Load libraries.
 suppressMessages(library(tidyverse,verbose = F))
