@@ -22,14 +22,14 @@
 ##################
 
 #List of needed packages
-list_of_packages=c("tidyverse","readr","stringi","janitor","readxl","optparse")
+list_of_packages=c("dplyr","readr","stringi","janitor","readxl","optparse")
 
 #Based on the packages that are present, install ones that are required.
 new.packages <- list_of_packages[!(list_of_packages %in% installed.packages()[,"Package"])]
 suppressMessages(if(length(new.packages)) install.packages(new.packages))
 
 #Load libraries.
-suppressMessages(library(tidyverse,verbose = F))
+suppressMessages(library(dplyr,verbose = F))
 suppressMessages(library(readr,verbose = F))
 suppressMessages(library(stringi,verbose = F))
 suppressMessages(library(janitor,verbose = F))
