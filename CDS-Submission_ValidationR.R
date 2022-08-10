@@ -56,13 +56,13 @@ option_list = list(
 )
 
 #create list of options and values for file input
-opt_parser = OptionParser(option_list=option_list, description = "\nCDS-Submission_ValidationR v.1.3.3")
+opt_parser = OptionParser(option_list=option_list, description = "\nCDS-Submission_ValidationR v.1.3.1")
 opt = parse_args(opt_parser)
 
 #If no options are presented, return --help, stop and print the following message.
 if (is.null(opt$file)&is.null(opt$template)){
   print_help(opt_parser)
-  cat("Please supply both the input file (-f) and template file (-t), CDS_submission_metadata_template-v1.3.xlsx.\n\n")
+  cat("Please supply both the input file (-f) and template file (-t), CDS_submission_metadata_template-v1.3.1.xlsx.\n\n")
   suppressMessages(stop(call.=FALSE))
 }
 
