@@ -24,3 +24,10 @@ Options:
 
 	-h, --help
 		Show this help message and exit
+```
+
+To test the script on one of the provided test files:
+
+```
+Rscript --vanilla CDS-Submission_ValidationR.R -f test_files_v1.3.1/a_all_pass-v1.3.1.xlsx -t CDS_submission_metadata_template-v1.3.1.xlsx
+```
