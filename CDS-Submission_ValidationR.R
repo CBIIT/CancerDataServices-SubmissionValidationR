@@ -56,13 +56,13 @@ option_list = list(
 )
 
 #create list of options and values for file input
-opt_parser = OptionParser(option_list=option_list, description = "\nCDS-Submission_ValidationR v.1.3.1")
+opt_parser = OptionParser(option_list=option_list, description = "\nCDS-Submission_ValidationR v.1.3.3")
 opt = parse_args(opt_parser)
 
 #If no options are presented, return --help, stop and print the following message.
 if (is.null(opt$file)&is.null(opt$template)){
   print_help(opt_parser)
-  cat("Please supply both the input file (-f) and template file (-t), CDS_submission_metadata_template-v1.3.1.xlsx.\n\n")
+  cat("Please supply both the input file (-f) and template file (-t), CDS_submission_metadata_template-v1.3.xlsx.\n\n")
   suppressMessages(stop(call.=FALSE))
 }
 
@@ -108,7 +108,7 @@ output_file=paste(file_name,
 #Start writing in the outfile.
 sink(paste(path,output_file,sep = ""))
 
-cat(paste("This is a validation output for ",file_name,".\n",sep = ""))
+cat(paste("This is a validation output for ",file_name,".\n\n",sep = ""))
 
 
 ###############
@@ -274,6 +274,32 @@ for (required_property_group in required_property_groups){
         #Required column contains values for each entry.
         if(incomplete_required_property==0 & incomplete_required_group==0){
           cat(paste("PASS: Required property ",property," contains values for all expected entries.\n",sep = ""))
+        }
+      }
+    }
+  }
+}
+
+#Define the required properties again.
+required_properties=df_dict$Field[!is.na(df_dict$`Required?`)]
+
+#Check for white space issues in non-required columns. There is no enforcement that a column has to be completely filled or have values based on other related data inputs.
+for (property in all_properties[!all_properties%in%required_properties]){
+  if (property%in%colnames(df)){
+    if(any(!is.na(unique(df[property])))){
+      df_temp=df
+      for (x in 1:dim(df[property])[1]){
+        df_temp[property][x,]=trimws(df[property][x,])
+      }
+      if (!all(df_temp[property]==df[property]) | any(is.na(df_temp[property]==df[property]))){
+        position_mis=grep(pattern = FALSE, x = df_temp[property]==df[property])
+        position_na=grep(pattern = TRUE, x=(is.na(df_temp[property]==df[property])))
+        position=c(position_mis,position_na)
+        for (instance in position){
+          if (!all(is.na(df_temp[property][instance,]))){
+            cat(paste("ERROR: Leading/trailing white space in the ",property," property, on the Metadata sheet. Please check the following position: ", instance,"\n", sep = ""))
+            
+          }
         }
       }
     }
