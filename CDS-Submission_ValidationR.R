@@ -22,7 +22,7 @@
 ##################
 
 #List of needed packages
-list_of_packages=c("dplyr","readr","stringi","janitor","readxl","optparse")
+list_of_packages=c("dplyr","readr","stringi","janitor","readxl","optparse","tools")
 
 #Based on the packages that are present, install ones that are required.
 new.packages <- list_of_packages[!(list_of_packages %in% installed.packages()[,"Package"])]
@@ -35,6 +35,7 @@ suppressMessages(library(stringi,verbose = F))
 suppressMessages(library(janitor,verbose = F))
 suppressMessages(library(readxl,verbose = F))
 suppressMessages(library(optparse,verbose = F))
+suppressMessages(library(tools,verbose = F))
 
 #remove objects that are no longer used.
 rm(list_of_packages)
@@ -67,7 +68,7 @@ if (is.null(opt$file)&is.null(opt$template)){
 }
 
 #Data file pathway
-file_path=opt$file
+file_path=file_path_as_absolute(opt$file)
 
 #Template file pathway
 template_path=opt$template
