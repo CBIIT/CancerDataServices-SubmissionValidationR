@@ -71,7 +71,7 @@ if (is.null(opt$file)&is.null(opt$template)){
 file_path=file_path_as_absolute(opt$file)
 
 #Template file pathway
-template_path=opt$template
+template_path=file_path_as_absolute(opt$template)
 
 #A start message for the user that the validation is underway.
 cat("The data file is being validated at this time.\n")
