@@ -94,16 +94,9 @@ path=paste(stri_reverse(stri_split_fixed(str = stri_reverse(file_path), pattern=
 output_file=paste(file_name,
                   "_validation_output_",
                   stri_replace_all_fixed(
-                    str = stri_replace_all_fixed(
-                      str = stri_replace_all_fixed(
-                        str = Sys.time(),
-                        pattern = ":",
-                        replacement = "_"),
-                      pattern = "-",
-                      replacement = "_"),
-                    pattern = " ",
+                    str = Sys.Date(),
+                    pattern = "-",
                     replacement = "_"),
-                  ".txt",
                   sep="")
 
 #Start writing in the outfile.
