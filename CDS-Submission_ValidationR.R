@@ -100,7 +100,7 @@ output_file=paste(file_name,
                   sep="")
 
 #Start writing in the outfile.
-sink(paste(path,output_file,sep = ""))
+sink(paste(path,output_file,".txt",sep = ""))
 
 cat(paste("This is a validation output for ",file_name,".\n\n",sep = ""))
 
