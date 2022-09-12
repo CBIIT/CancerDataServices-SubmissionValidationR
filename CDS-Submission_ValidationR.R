@@ -350,6 +350,29 @@ for (value_set_name in names(df_all_terms)){
   }
 }
 
+#################
+#
+# Check file metadata
+#
+#################
+
+cat("\nThe following columns have values for files that are unexpected:\n\n")
+
+for (row_pos in 1:dim(df)[1]){
+  if (!is.na(df$file_name[row_pos])){
+    if (!is.na(df$file_size[row_pos])){
+      if (df$file_size[row_pos]=="0"){
+        cat(paste("WARNING: The file in row ",row_pos,", has a value of 0. Please make sure that this is a correct value for the file.\n",sep = ""))
+      }
+    }
+    if (!is.na(df$md5sum[row_pos])){
+      if (!stri_detect_regex(str = df$md5sum[row_pos],pattern = '^[a-f0-9]{32}$',case_insensitive=TRUE)){
+        cat(paste("ERROR: The file in row ",row_pos,", has a md5sum value that does not follow the md5sum regular expression.\n",sep = ""))
+      }
+    }
+  }
+}
+
 
 #################
 #
