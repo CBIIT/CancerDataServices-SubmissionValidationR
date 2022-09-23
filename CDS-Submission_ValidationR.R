@@ -328,9 +328,30 @@ for (x in 1:length(VSN)){
   }
 }
 
+#Enumerated Array properties
+enum_arrays=c('therapeutic_agents',"treatment_type")
+
 #Use the list of all accepted values for each value_set_name, and compare that against the Metadata page and determine if the values, if present, match the accepted terms.
 for (value_set_name in names(df_all_terms)){
-  if (value_set_name%in%colnames(df)){
+  if (value_set_name %in% enum_arrays){
+    unique_values=unique(df[value_set_name][[1]])
+    unique_values=unique(trimws(unlist(stri_split_fixed(str = unique_values,pattern = ","))))
+    unique_values=unique_values[!is.na(unique_values)]
+    if (length(unique_values)>0){
+      if (!all(unique_values%in%df_all_terms[value_set_name][[1]])){
+        for (x in 1:length(unique_values)){
+          check_value=unique_values[x]
+          if (!is.na(check_value)){
+            if (!as.character(check_value)%in%df_all_terms[value_set_name][[1]]){
+              cat(paste("ERROR: ",value_set_name," property contains a value that is not recognized: ", check_value,"\n",sep = ""))
+            }
+          }
+        }
+      }else{
+        cat(paste("PASS:",value_set_name,"property contains all valid values.\n"))
+      }
+    }
+  }else if (value_set_name%in%colnames(df)){
     unique_values=unique(df[value_set_name][[1]])
     unique_values=unique_values[!is.na(unique_values)]
     if (length(unique_values)>0){
@@ -350,13 +371,69 @@ for (value_set_name in names(df_all_terms)){
   }
 }
 
+
+#################
+#
+# Library to sample check
+#
+#################
+
+cat("\nThis submission and subsequent submission files derived from this template assume that a library_id is associated to only one sample_id.\nIf there are any unexpected values, they will appear below:\n\n")
+
+#For each library_id check to see how many instances it is found.
+for (library_id in unique(df$library_id)){
+  if(!is.na(library_id)){
+    grep_instances=grep(pattern = library_id, x = df$library_id)
+    if (length(grep_instances)>1){
+      cat(paste("WARNING: The library_id, ",library_id,", has multiple samples associated with it, ", df$sample_id[grep_instances] ,". This setup will cause issues when submitting to SRA.\n",sep = ""))
+    }
+  }
+}
+
+
+#################
+#
+# Require certain properties based on the file type.
+#
+#################
+
+#For BAM, CRAM and Fastq files, we expect that all the files to have only one sample associated with them and the following properties: avg_read_length, coverage, bases, reads.
+
+cat("\nThis submission and subsequent submission files derived from this template assume that FASTQ, BAM and CRAM files are single sample files, and contain all associated metadata for submission.\nIf there are any unexpected values, they will appear below:\n\n")
+
+#Gather all row positions for each file type.
+bams=grep(pattern = "bam", x = tolower(df$file_type))
+crams=grep(pattern = "cram", x = tolower(df$file_type))
+fastqs=grep(pattern = "fastq", x = tolower(df$file_type))
+
+#Combine all those positions
+single_sample_seq_files=c(bams, crams, fastqs)
+
+#For each position, check to see if there are any samples that share the same library_id and make sure that the values for the required properties for SRA submission are present.                 
+for (file_location in single_sample_seq_files){
+  sample_id=df$sample_id[file_location]
+  sample_id_loc=grep(pattern = sample_id, x = df$sample_id)
+  if (any(single_sample_seq_files[!single_sample_seq_files %in% file_location]  %in% sample_id_loc)){
+    cat(paste("WARNING: The sample_id, ",sample_id,", is associated with multiple single sample sequencing files.\n",sep = ""))
+  }
+  bases_check= df$bases[file_location]
+  avg_read_length_check=df$avg_read_length[file_location]
+  coverage_check=df$coverage[file_location]
+  reads_check=df$number_of_reads[file_location]
+  SRA_checks=c(bases_check, avg_read_length_check, coverage_check, reads_check)
+  if (any(is.na(SRA_checks))){
+    cat(paste("ERROR: The file, ",df$file_name[file_location],", is missing at least one expected value (bases, avg_read_length, coverage, number_of_reads) that is associated with an SRA submissions.\n",sep = ""))
+  }
+}
+
+
 #################
 #
 # Check file metadata
 #
 #################
 
-cat("\nThe following columns have values for files that are unexpected:\n\n")
+cat("\nIf there are columns that have unexpected values for files, they will appear below:\n\n")
 
 for (row_pos in 1:dim(df)[1]){
   if (!is.na(df$file_name[row_pos])){
