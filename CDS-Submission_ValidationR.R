@@ -383,9 +383,9 @@ cat("\nThis submission and subsequent submission files derived from this templat
 #For each library_id check to see how many instances it is found.
 for (library_id in unique(df$library_id)){
   if(!is.na(library_id)){
-    grep_instances=grep(pattern = library_id, x = df$library_id)
+    grep_instances=unique(df$sample_id[grep(pattern = library_id, x = df$library_id)])
     if (length(grep_instances)>1){
-      cat(paste("WARNING: The library_id, ",library_id,", has multiple samples associated with it, ", df$sample_id[grep_instances] ,". This setup will cause issues when submitting to SRA.\n",sep = ""))
+      cat(paste("WARNING: The library_id, ",library_id,", has multiple samples associated with it, ", grep_instances ,". This setup will cause issues when submitting to SRA.\n",sep = ""))
     }
   }
 }
@@ -401,28 +401,29 @@ for (library_id in unique(df$library_id)){
 
 cat("\nThis submission and subsequent submission files derived from this template assume that FASTQ, BAM and CRAM files are single sample files, and contain all associated metadata for submission.\nIf there are any unexpected values, they will appear below:\n\n")
 
-#Gather all row positions for each file type.
-bams=grep(pattern = "bam", x = tolower(df$file_type))
-crams=grep(pattern = "cram", x = tolower(df$file_type))
-fastqs=grep(pattern = "fastq", x = tolower(df$file_type))
+#Gather all file types.
+file_types=c("bam","cram","fastq")
 
-#Combine all those positions
-single_sample_seq_files=c(bams, crams, fastqs)
-
-#For each position, check to see if there are any samples that share the same library_id and make sure that the values for the required properties for SRA submission are present.                 
-for (file_location in single_sample_seq_files){
-  sample_id=df$sample_id[file_location]
-  sample_id_loc=grep(pattern = sample_id, x = df$sample_id)
-  if (any(single_sample_seq_files[!single_sample_seq_files %in% file_location]  %in% sample_id_loc)){
-    cat(paste("WARNING: The sample_id, ",sample_id,", is associated with multiple single sample sequencing files.\n",sep = ""))
-  }
-  bases_check= df$bases[file_location]
-  avg_read_length_check=df$avg_read_length[file_location]
-  coverage_check=df$coverage[file_location]
-  reads_check=df$number_of_reads[file_location]
-  SRA_checks=c(bases_check, avg_read_length_check, coverage_check, reads_check)
-  if (any(is.na(SRA_checks))){
-    cat(paste("ERROR: The file, ",df$file_name[file_location],", is missing at least one expected value (bases, avg_read_length, coverage, number_of_reads) that is associated with an SRA submissions.\n",sep = ""))
+#For each position, check to see if there are any samples that share the same library_id and make sure that the values for the required properties for SRA submission are present.      
+for (file_type in file_types){
+  single_sample_seq_files=grep(pattern = file_type, x = tolower(df$file_type))
+  for (file_location in single_sample_seq_files){
+    sample_id=df$sample_id[file_location]
+    sample_id_loc=grep(pattern = sample_id, x = df$sample_id)
+    if (any(single_sample_seq_files[!single_sample_seq_files %in% file_location]  %in% sample_id_loc)){
+      sample_id_found=single_sample_seq_files[single_sample_seq_files %in% sample_id_loc]
+      other_files=df$file_name[sample_id_found[!sample_id_found %in% file_location]]
+      single_sample_seq_files=single_sample_seq_files[!single_sample_seq_files %in% file_location]
+      cat(paste("WARNING: The sample_id",sample_id,"is associated with multiple single sample sequencing files:",df$file_name[file_location],other_files,"\n",sep = " "))
+    }
+    bases_check= df$bases[file_location]
+    avg_read_length_check=df$avg_read_length[file_location]
+    coverage_check=df$coverage[file_location]
+    reads_check=df$number_of_reads[file_location]
+    SRA_checks=c(bases_check, avg_read_length_check, coverage_check, reads_check)
+    if (any(is.na(SRA_checks))){
+      cat(paste("ERROR: The file, ",df$file_name[file_location],", is missing at least one expected value (bases, avg_read_length, coverage, number_of_reads) that is associated with an SRA submissions.\n",sep = ""))
+    }
   }
 }
 
