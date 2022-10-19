@@ -85,9 +85,7 @@ cat("The data file is being validated at this time.\n")
 
 #Rework the file path to obtain a file name, this will be used for the output file.
 file_name=stri_reverse(stri_split_fixed(str = (stri_split_fixed(str = stri_reverse(file_path), pattern="/",n = 2)[[1]][1]),pattern = ".", n=2)[[1]][2])
-
 ext=tolower(stri_reverse(stri_split_fixed(str = stri_reverse(file_path),pattern = ".",n=2)[[1]][1]))
-
 path=paste(stri_reverse(stri_split_fixed(str = stri_reverse(file_path), pattern="/",n = 2)[[1]][2]),"/",sep = "")
 
 #Output file name based on input file name and date/time stamped.
@@ -129,7 +127,6 @@ if (all(expected_sheets%in%sheet_names)){
 }
 
 #If any sheet is missing, throw an overt error message then stops the process. This script pulls information from the expected sheets and requires all sheets present before running.
-
 template_warning="\n\n##################################################################################################################\n#                                                                                                                #\n# Please obtain a new data template with all sheets and columns present before making further edits to this one. #\n#                                                                                                                #\n##################################################################################################################\n\n\n"
 
 if (sheet_gone==1){
@@ -155,7 +152,6 @@ all_properties=all_properties[!grepl(pattern = " ",x = all_properties)]
 all_properties=all_properties[!grepl(pattern = "Field",x = all_properties)]
 #Pull out required property groups
 required_property_groups=unique(df_dict$`Required?`[!is.na(df_dict$`Required?`)])
-
 required_properties=df_dict$Field[!is.na(df_dict$`Required?`)]
 
 #Read in metadata page/file to check against the expected/required properties. 
@@ -185,7 +181,6 @@ if (all(all_properties%in%colnames(df))){
       cat(paste("ERROR: The Metadata sheet is missing the following column: ",missing_prop,".\n",sep = ""))
     }
   }
-  
   #Make it very obvious that the user should not continue with the current template file as it does not contain all expected information.
   if (col_gone==1){
     cat(template_warning)
@@ -204,7 +199,6 @@ cat("\nThis section is for required properties and their required groups, seen o
 #For blocks of required columns, it will check if all required columns have values if any one required column have a value. If there are only partially filled rows for required columns or the values within the required column contain leading and/or trailing white space, it will return those row positions for the required columns.
 
 for (required_property_group in required_property_groups){
-  
   required_properties_dict=df_dict$Field[grepl(pattern = required_property_group,x = df_dict$`Required?`)]
   required_properties=colnames(df[colnames(df)%in%required_properties_dict])
   
@@ -220,8 +214,7 @@ for (required_property_group in required_property_groups){
       missing_col=colnames(df[required_properties][!colnames(df[required_properties])%in%colnames(df_property_clean)])
       cat(paste("ERROR: Column from a required group of properties, ",required_property_group,", was found empty on the Metadata sheet. Please add values for the following columns: ", missing_col,"\n", sep = ""))
     }
-    
-    #Test to see if there are complete cases, values for all properties.    
+  #Test to see if there are complete cases, values for all properties.    
   }else if(!all(complete.cases(df[required_properties]))){
     for (row in 1:dim(df[required_properties])[1]){
       if (!complete.cases(df[required_properties][row,])){
@@ -240,7 +233,6 @@ for (required_property_group in required_property_groups){
     #if none of these situations are triggered, then the column likely has all values present in the required property group for each entry.
     cat(paste("PASS: Required property group ",required_property_group," contains values for all expected entries.\n",sep = ""))
   }
-  
   #This section will check against white space in the values of each column when there is a value present.
   for (property in required_properties){
     if (property%in%colnames(df)){
@@ -292,7 +284,6 @@ for (property in all_properties[!all_properties%in%required_properties]){
         for (instance in position){
           if (!all(is.na(df_temp[property][instance,]))){
             cat(paste("ERROR: Leading/trailing white space in the ",property," property, on the Metadata sheet. Please check the following position: ", instance+1,"\n", sep = ""))
-            
           }
         }
       }
@@ -385,7 +376,6 @@ for (participant in 1:length(participant_list)){
   gender=unique(df$gender[df$participant_id %in% participant_list[participant]])
   ethnicity=unique(df$ethnicity[df$participant_id %in% participant_list[participant]])
   race=unique(df$race[df$participant_id %in% participant_list[participant]])
-  
   if (length(gender)>1){
     cat(paste("\nThe following participant_id, ",participant_list[participant],", is linked to more than one value for gender.\n",sep = "" ))
   }
