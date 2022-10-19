@@ -423,7 +423,22 @@ file_types=c("bam","cram","fastq")
 #For each position, check to see if there are any samples that share the same library_id and make sure that the values for the required properties for SRA submission are present.      
 for (file_type in file_types){
   single_sample_seq_files=grep(pattern = file_type, x = tolower(df$file_type))
-  for (file_location in single_sample_seq_files){
+  df_sssfi=select(df,file_name,file_size,file_type,md5sum)%>%mutate(index=1:dim(df)[1])
+  df_sssfi=df_sssfi[single_sample_seq_files,]
+  df_sssfu=unique(select(df_sssfi,-index))
+  single_sample_seq_files_unique=c()
+  #Match the unique rows with all the rows and their index number, and take the lowest index number as the input for the rest of the for loop to determine if the single sample file shares multiple sample ids.
+  for (urow in 1:dim(df_sssfu)[1]){
+    min_num=min(df_sssfi[
+      df_sssfi[,1][[1]] %in% df_sssfu[urow,1][[1]] &
+      df_sssfi[,2][[1]] %in% df_sssfu[urow,2][[1]] &
+      df_sssfi[,3][[1]] %in% df_sssfu[urow,3][[1]] &
+      df_sssfi[,4][[1]] %in% df_sssfu[urow,4][[1]],
+      ]["index"])
+    single_sample_seq_files_unique=c(single_sample_seq_files_unique,min_num)
+  }
+  #For each unique single sample file, make sure that the file is unique to the sample id. If not, throw a warning, as some of these files could share samples. Example: Two fastq files for a sample, a bam and a realigned bam for a sample, etc.
+  for (file_location in single_sample_seq_files_unique){
     sample_id=df$sample_id[file_location]
     sample_id_loc=grep(pattern = sample_id, x = df$sample_id)
     if (any(single_sample_seq_files[!single_sample_seq_files %in% file_location]  %in% sample_id_loc)){
@@ -432,6 +447,7 @@ for (file_type in file_types){
       single_sample_seq_files=single_sample_seq_files[!single_sample_seq_files %in% file_location]
       cat(paste("WARNING: The sample_id",sample_id,"is associated with multiple single sample sequencing files:",df$file_name[file_location],other_files,"\n",sep = " "))
     }
+  #Check to see if the expected SRA metadata is present for the files going to the SRA submission.
     bases_check= df$bases[file_location]
     avg_read_length_check=df$avg_read_length[file_location]
     coverage_check=df$coverage[file_location]
