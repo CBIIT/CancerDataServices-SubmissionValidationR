@@ -22,7 +22,7 @@
 ##################
 
 #List of needed packages
-list_of_packages=c("dplyr","readr","stringi","janitor","readxl","optparse","tools")
+list_of_packages=c("dplyr","tidyr","readr","stringi","janitor","readxl","optparse","tools")
 
 #Based on the packages that are present, install ones that are required.
 new.packages <- list_of_packages[!(list_of_packages %in% installed.packages()[,"Package"])]
@@ -31,6 +31,7 @@ suppressMessages(if(length(new.packages)) install.packages(new.packages))
 #Load libraries.
 suppressMessages(library(dplyr,verbose = F))
 suppressMessages(library(readr,verbose = F))
+suppressMessages(library(tidyr,verbose = F))
 suppressMessages(library(stringi,verbose = F))
 suppressMessages(library(janitor,verbose = F))
 suppressMessages(library(readxl,verbose = F))
@@ -428,14 +429,16 @@ for (file_type in file_types){
   df_sssfu=unique(select(df_sssfi,-index))
   single_sample_seq_files_unique=c()
   #Match the unique rows with all the rows and their index number, and take the lowest index number as the input for the rest of the for loop to determine if the single sample file shares multiple sample ids.
-  for (urow in 1:dim(df_sssfu)[1]){
-    min_num=min(df_sssfi[
-      df_sssfi[,1][[1]] %in% df_sssfu[urow,1][[1]] &
-      df_sssfi[,2][[1]] %in% df_sssfu[urow,2][[1]] &
-      df_sssfi[,3][[1]] %in% df_sssfu[urow,3][[1]] &
-      df_sssfi[,4][[1]] %in% df_sssfu[urow,4][[1]],
+  if (dim(df_sssfu)[1]!=0){
+    for (urow in 1:dim(df_sssfu)[1]){
+      min_num=min(df_sssfi[
+        df_sssfi[,1][[1]] %in% df_sssfu[urow,1][[1]] &
+          df_sssfi[,2][[1]] %in% df_sssfu[urow,2][[1]] &
+          df_sssfi[,3][[1]] %in% df_sssfu[urow,3][[1]] &
+          df_sssfi[,4][[1]] %in% df_sssfu[urow,4][[1]],
       ]["index"])
-    single_sample_seq_files_unique=c(single_sample_seq_files_unique,min_num)
+      single_sample_seq_files_unique=c(single_sample_seq_files_unique,min_num)
+    }
   }
   #For each unique single sample file, make sure that the file is unique to the sample id. If not, throw a warning, as some of these files could share samples. Example: Two fastq files for a sample, a bam and a realigned bam for a sample, etc.
   for (file_location in single_sample_seq_files_unique){
@@ -478,6 +481,55 @@ for (row_pos in 1:dim(df)[1]){
     if (!is.na(df$md5sum[row_pos])){
       if (!stri_detect_regex(str = df$md5sum[row_pos],pattern = '^[a-f0-9]{32}$',case_insensitive=TRUE)){
         cat(paste("ERROR: The file in row ",row_pos+1,", has a md5sum value that does not follow the md5sum regular expression.\n",sep = ""))
+      }
+    }
+  }
+}
+
+
+###############
+#
+# AWS bucket file check
+#
+###############
+
+df_bucket=select(df, file_url_in_cds)%>%
+  separate(file_url_in_cds,into = c("s3","blank","bucket","the_rest"),sep = "/",extra = "merge")%>%
+  select(-s3,-blank,-the_rest)
+df_bucket=unique(df_bucket)
+
+if (dim(df_bucket)[1]>1){
+  cat(paste("WARNING: There are more than one aws bucket that is associated with this metadata file: ", df_bucket$bucket,".\n",sep = ""))
+}
+
+for (bucket_num in 1:dim(df_bucket)[1]){
+  metadata_files=suppressMessages(suppressWarnings(system(command = paste("aws s3 ls --recursive s3://", df_bucket[bucket_num,],"/",sep = ""),intern = TRUE)))
+  
+  one_space=0
+  while(one_space==0){
+    metadata_files=stri_replace_all_fixed(str=metadata_files,pattern = "  ",replacement = " ")
+    if (!any(grepl(pattern = "  ",metadata_files))){
+      one_space=1
+    }
+  }
+  bucket_metadata=data.frame(all_metadata=metadata_files)
+  bucket_metadata=separate(bucket_metadata, all_metadata, into = c("date","time","file_size","file_path"),sep = " ")%>%
+    select(-date, -time)%>%
+    mutate(file_path=paste("s3://",df_bucket[bucket_num,],"/",file_path,sep = ""))
+  bucket_metadata$file_size=as.character(bucket_metadata$file_size)
+  df_bucket_specific=df[grep(pattern = df_bucket[bucket_num,], x = df$file_url_in_cds),]
+  for (row in 1:dim(df_bucket_specific)[1]){
+    value=df_bucket_specific[row,'file_size'][[1]] %in% bucket_metadata['file_size'][[1]] &
+          df_bucket_specific[row,'file_url_in_cds'][[1]] %in% bucket_metadata['file_path'][[1]]
+    
+    if (value==FALSE){
+      file_value=df_bucket_specific[row,'file_url_in_cds'][[1]] %in% bucket_metadata['file_path'][[1]]
+      size_value=df_bucket_specific[row,'file_size'][[1]] %in% bucket_metadata['file_size'][[1]]
+      if (file_value==FALSE){
+        cat(paste("The following file is not found in the AWS bucket: ", df_bucket_specific[row,'file_url_in_cds'][[1]],"\n", sep = ""))
+      }
+      if (size_value==FALSE){
+        cat(paste("The following file does not have the same file size found in the AWS bucket: ", df_bucket_specific[row,'file_url_in_cds'][[1]],"\n", sep = ""))
       }
     }
   }
