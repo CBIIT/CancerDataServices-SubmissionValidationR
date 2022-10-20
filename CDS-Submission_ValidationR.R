@@ -395,7 +395,7 @@ for (participant in 1:length(participant_list)){
 #
 #################
 
-cat("\nThis submission and subsequent submission files derived from this template assume that a library_id is associated to only one sample_id.\nIf there are any unexpected values, they will appear below:\n\n")
+cat("\nThis submission and subsequent submission files derived from this template assume that a library_id is associated to only one sample_id.\nIf there are any unexpected values, they will be reported below:\n\n")
 
 #For each library_id check to see how many instances it is found.
 for (library_id in unique(df$library_id)){
@@ -416,7 +416,7 @@ for (library_id in unique(df$library_id)){
 
 #For BAM, CRAM and Fastq files, we expect that all the files to have only one sample associated with them and the following properties: avg_read_length, coverage, bases, reads.
 
-cat("\nThis submission and subsequent submission files derived from this template assume that FASTQ, BAM and CRAM files are single sample files, and contain all associated metadata for submission.\nIf there are any unexpected values, they will appear below:\n\n")
+cat("\nThis submission and subsequent submission files derived from this template assume that FASTQ, BAM and CRAM files are single sample files, and contain all associated metadata for submission.\nIf there are any unexpected values, they will be reported below:\n\n")
 
 #Gather all file types.
 file_types=c("bam","cram","fastq")
@@ -469,7 +469,7 @@ for (file_type in file_types){
 #
 #################
 
-cat("\nIf there are columns that have unexpected values for files, they will appear below:\n\n")
+cat("\nIf there are columns that have unexpected values for files, they will be reported below:\n\n")
 
 for (row_pos in 1:dim(df)[1]){
   if (!is.na(df$file_name[row_pos])){
@@ -493,6 +493,8 @@ for (row_pos in 1:dim(df)[1]){
 #
 ###############
 
+cat("If there are unexpected values in the AWS buckets or files within the bucket, they will be reported below:\n\n")
+
 df_bucket=select(df, file_url_in_cds)%>%
   separate(file_url_in_cds,into = c("s3","blank","bucket","the_rest"),sep = "/",extra = "merge")%>%
   select(-s3,-blank,-the_rest)
@@ -500,6 +502,7 @@ df_bucket=unique(df_bucket)
 
 if (dim(df_bucket)[1]>1){
   cat(paste("WARNING: There are more than one aws bucket that is associated with this metadata file: ", df_bucket$bucket,".\n",sep = ""))
+  cat("\n")
 }
 
 for (bucket_num in 1:dim(df_bucket)[1]){
