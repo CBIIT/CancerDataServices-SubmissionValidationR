@@ -508,13 +508,10 @@ if (dim(df_bucket)[1]>1){
 for (bucket_num in 1:dim(df_bucket)[1]){
   metadata_files=suppressMessages(suppressWarnings(system(command = paste("aws s3 ls --recursive s3://", df_bucket[bucket_num,],"/",sep = ""),intern = TRUE)))
   
-  one_space=0
-  while(one_space==0){
-    metadata_files=stri_replace_all_fixed(str=metadata_files,pattern = "  ",replacement = " ")
-    if (!any(grepl(pattern = "  ",metadata_files))){
-      one_space=1
-    }
+  while (any(grepl(pattern = "  ",x = metadata_files))==TRUE){
+    metadata_files=stri_replace_all_fixed(str = metadata_files,pattern = "  ",replacement = " ")
   }
+  
   bucket_metadata=data.frame(all_metadata=metadata_files)
   bucket_metadata=separate(bucket_metadata, all_metadata, into = c("date","time","file_size","file_path"),sep = " ")%>%
     select(-date, -time)%>%
