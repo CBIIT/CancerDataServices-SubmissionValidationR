@@ -13,7 +13,7 @@ Rscript --vanilla CDS-Submission_ValidationR.R --help
 ```
 Usage: CDS-Submission_ValidationR.R [options]
 
-CDS-Submission_ValidationR v.1.3.1
+CDS-Submission_ValidationR v2.0.0
 
 Options:
 	-f CHARACTER, --file=CHARACTER
