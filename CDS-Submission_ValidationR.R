@@ -85,17 +85,17 @@ cat("The data file is being validated at this time.\n")
 ###############
 
 #Rework the file path to obtain a file name, this will be used for the output file.
-file_name=stri_reverse(stri_split_fixed(str = (stri_split_fixed(str = stri_reverse(file_path), pattern="/",n = 2)[[1]][1]),pattern = ".", n=2)[[1]][2])
-ext=tolower(stri_reverse(stri_split_fixed(str = stri_reverse(file_path),pattern = ".",n=2)[[1]][1]))
-path=paste(stri_reverse(stri_split_fixed(str = stri_reverse(file_path), pattern="/",n = 2)[[1]][2]),"/",sep = "")
+file_name=stri_reverse(stri_split_fixed(stri_reverse(basename(file_path)),pattern = ".", n=2)[[1]][2])
+ext=tolower(stri_reverse(stri_split_fixed(stri_reverse(basename(file_path)),pattern = ".", n=2)[[1]][1]))
+path=paste(dirname(file_path),"/",sep = "")
 
 #Output file name based on input file name and date/time stamped.
 output_file=paste(file_name,
-                  "_validation_output_",
+                  "_Validate",
                   stri_replace_all_fixed(
                     str = Sys.Date(),
                     pattern = "-",
-                    replacement = "_"),
+                    replacement = ""),
                   sep="")
 
 #Start writing in the outfile.
@@ -545,4 +545,4 @@ for (bucket_num in 1:dim(df_bucket)[1]){
 #Stop write out to file and display "done message" on command line.
 sink()
 
-cat(paste('Please see the following file, ',output_file,', to determine which parts passed, had warnings, or contained errors.\n',sep = ""))
+cat(paste("\n\nProcess Complete.\n\nThe output file can be found here: ",path,"\n\n",sep = "")) 
