@@ -58,7 +58,7 @@ option_list = list(
 )
 
 #create list of options and values for file input
-opt_parser = OptionParser(option_list=option_list, description = "\nCDS-Submission_ValidationR v2.0.0")
+opt_parser = OptionParser(option_list=option_list, description = "\nCDS-Submission_ValidationR v.1.3.3")
 opt = parse_args(opt_parser)
 
 #If no options are presented, return --help, stop and print the following message.
@@ -128,7 +128,7 @@ if (all(expected_sheets%in%sheet_names)){
 }
 
 #If any sheet is missing, throw an overt error message then stops the process. This script pulls information from the expected sheets and requires all sheets present before running.
-template_warning="\n\n##################################################################################################################\n#                                                                                                                #\n# Please obtain a new data template with all sheets and columns present before making further edits to this one. #\n#                                                                                                                #\n##################################################################################################################\n\n\n"
+template_warning="\n\n################################################################################################################################\n#                                                                                                                #\n# ERROR: Please obtain a new data template with all sheets and columns present before making further edits to this one. #\n#                                                                                                                #\n################################################################################################################################\n\n\n"
 
 if (sheet_gone==1){
   stop(paste("\nThe following sheet(s) is/are missing in the template file: ",paste(expected_sheets[!expected_sheets%in%sheet_names],collapse = ", "), template_warning, sep = ""), call.=FALSE)
@@ -378,13 +378,13 @@ for (participant in 1:length(participant_list)){
   ethnicity=unique(df$ethnicity[df$participant_id %in% participant_list[participant]])
   race=unique(df$race[df$participant_id %in% participant_list[participant]])
   if (length(gender)>1){
-    cat(paste("\nThe following participant_id, ",participant_list[participant],", is linked to more than one value for gender.\n",sep = "" ))
+    cat(paste("\nERROR:The following participant_id, ",participant_list[participant],", is linked to more than one value for gender.\n",sep = "" ))
   }
   if (length(ethnicity)>1){
-    cat(paste("\nThe following participant_id, ",participant_list[participant],", is linked to more than one value for ethnicity.\n",sep = "" ))
+    cat(paste("\nERROR: The following participant_id, ",participant_list[participant],", is linked to more than one value for ethnicity.\n",sep = "" ))
   }
   if (length(race)>1){
-    cat(paste("\nThe following participant_id, ",participant_list[participant],", is linked to more than one value for race.\n",sep = "" ))
+    cat(paste("\nERROR: The following participant_id, ",participant_list[participant],", is linked to more than one value for race.\n",sep = "" ))
   }
 }
 
@@ -495,16 +495,19 @@ for (row_pos in 1:dim(df)[1]){
 
 cat("If there are unexpected values in the AWS buckets or files within the bucket, they will be reported below:\n\n")
 
+#Obtain bucket information
 df_bucket=select(df, file_url_in_cds)%>%
   separate(file_url_in_cds,into = c("s3","blank","bucket","the_rest"),sep = "/",extra = "merge")%>%
   select(-s3,-blank,-the_rest)
 df_bucket=unique(df_bucket)
 
+#Check to see if there is only one bucket associated with the submission. It is not required, but it is likely that there would only be one bucket.
 if (dim(df_bucket)[1]>1){
   cat(paste("WARNING: There are more than one aws bucket that is associated with this metadata file: ", df_bucket$bucket,".\n",sep = ""))
   cat("\n")
 }
 
+#Do a list of the bucket and then check the file size and name against the metadata submission.
 for (bucket_num in 1:dim(df_bucket)[1]){
   metadata_files=suppressMessages(suppressWarnings(system(command = paste("aws s3 ls --recursive s3://", df_bucket[bucket_num,],"/",sep = ""),intern = TRUE)))
   
@@ -526,10 +529,10 @@ for (bucket_num in 1:dim(df_bucket)[1]){
       file_value=df_bucket_specific[row,'file_url_in_cds'][[1]] %in% bucket_metadata['file_path'][[1]]
       size_value=df_bucket_specific[row,'file_size'][[1]] %in% bucket_metadata['file_size'][[1]]
       if (file_value==FALSE){
-        cat(paste("The following file is not found in the AWS bucket: ", df_bucket_specific[row,'file_url_in_cds'][[1]],"\n", sep = ""))
+        cat(paste("ERROR: The following file is not found in the AWS bucket: ", df_bucket_specific[row,'file_url_in_cds'][[1]],"\n", sep = ""))
       }
       if (size_value==FALSE){
-        cat(paste("The following file does not have the same file size found in the AWS bucket: ", df_bucket_specific[row,'file_url_in_cds'][[1]],"\n", sep = ""))
+        cat(paste("ERROR: The following file does not have the same file size found in the AWS bucket: ", df_bucket_specific[row,'file_url_in_cds'][[1]],"\n", sep = ""))
       }
     }
   }
