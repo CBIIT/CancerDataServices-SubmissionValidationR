@@ -9,7 +9,7 @@
 #
 ##################
 
-#This takes a data file as input that is formatted to the submission template for CDS v1.3.1.
+#This takes a data file as input that is formatted to the submission template for CDS v2.0.1.
 
 #Run the following command in a terminal where R is installed for help.
 
@@ -58,7 +58,7 @@ option_list = list(
 )
 
 #create list of options and values for file input
-opt_parser = OptionParser(option_list=option_list, description = "\nCDS-Submission_ValidationR v.1.3.3")
+opt_parser = OptionParser(option_list=option_list, description = "\nCDS-Submission_ValidationR v2.0.1")
 opt = parse_args(opt_parser)
 
 #If no options are presented, return --help, stop and print the following message.
