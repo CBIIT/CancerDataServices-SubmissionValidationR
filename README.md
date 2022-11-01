@@ -33,3 +33,10 @@ Rscript --vanilla CDS-Submission_ValidationR.R -f test_files_v1.3.1/a_all_pass-v
 ```
 
 `Note: The AWS bucket checks will not work with any of the test files, as the files and their locations are fake data`
+
+
+## Error Messages
+
+|Message|Issue|Likely Fix|
+|-------|-----|----------|
+|Please obtain a new data template with all sheets and columns present before making further edits to this one.|The template with metadata does not match the template being tested against.|Move metadata to the updated template and rerun the validation.
