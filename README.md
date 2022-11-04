@@ -56,5 +56,5 @@ Rscript --vanilla CDS-Submission_ValidationR.R -f test_files_v1.3.1/a_all_pass-v
 |WARNING: The file in row {row_position}, has a size value of 0. Please make sure that this is a correct value for the file.|||
 |ERROR: The file in row {row_position}, has a md5sum value that does not follow the md5sum regular expression.|||
 |WARNING: There are more than one aws bucket that is associated with this metadata file: {s3 bucket list}||This is a confirmation and only needs to be fixed if this is unexpected.|
-|ERROR: The following file is not found in the AWS bucket: {file list}|||
-|ERROR: The following file does not have the same file size found in the AWS bucket: {file list}|||
+|ERROR: The following file is not found in the AWS bucket: {file list}|The files supplied in the manifest column, "file_url_in_cds", are not found in the bucket.|Make sure the files exist in the bucket and the urls in the manifest are correctly pointing to them.|
+|ERROR: The following file does not have the same file size found in the AWS bucket: {file list}|The file sizes supplied in the manifest do not match the file sizes based on AWS calls. |Make sure you have the correct file size for each file and the numbers have not been rounded by other programs (e.g. Excel).|
