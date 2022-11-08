@@ -1,6 +1,6 @@
 #!/usr/bin/env Rscript
 
-#Cancer Data Services - Submission Validation-R v1.3.1
+#Cancer Data Services - Submission Validation-R v2.0.0
 
 
 ##################
@@ -9,7 +9,7 @@
 #
 ##################
 
-#This takes a data file as input that is formatted to the submission template for CDS v1.3.1.
+#This takes a data file as input that is formatted to the submission template for CDS.
 
 #Run the following command in a terminal where R is installed for help.
 
@@ -54,7 +54,7 @@ option_list = list(
   make_option(c("-f", "--file"), type="character", default=NULL, 
               help="dataset file (.xlsx, .tsv, .csv)", metavar="character"),
   make_option(c("-t", "--template"), type="character", default=NULL, 
-              help="dataset template file, CDS_submission_metadata_template-v1.3.xlsx", metavar="character")
+              help="dataset template file, CDS_submission_metadata_template.xlsx", metavar="character")
 )
 
 #create list of options and values for file input
@@ -64,7 +64,7 @@ opt = parse_args(opt_parser)
 #If no options are presented, return --help, stop and print the following message.
 if (is.null(opt$file)&is.null(opt$template)){
   print_help(opt_parser)
-  cat("Please supply both the input file (-f) and template file (-t), CDS_submission_metadata_template-v1.3.xlsx.\n\n")
+  cat("Please supply both the input file (-f) and template file (-t), CDS_submission_metadata_template.xlsx.\n\n")
   suppressMessages(stop(call.=FALSE))
 }
 
