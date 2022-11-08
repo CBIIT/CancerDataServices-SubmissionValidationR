@@ -9,7 +9,7 @@
 #
 ##################
 
-#This takes a data file as input that is formatted to the submission template for CDS v2.0.1.
+#This takes a data file as input that is formatted to the submission template for CDS.
 
 #Run the following command in a terminal where R is installed for help.
 
