@@ -348,8 +348,8 @@ for (value_set_name in names(df_all_terms)){
     unique_values=unique_values[!is.na(unique_values)]
     if (length(unique_values)>0){
       if (!all(unique_values%in%df_all_terms[value_set_name][[1]])){
-        for (x in 1:dim(unique(df[value_set_name]))[1]){
-          check_value=unique(df[value_set_name])[x,]
+        for (x in 1:length(unique_values)){
+          check_value=unique_values[x]
           if (!is.na(check_value)){
             if (!as.character(check_value)%in%df_all_terms[value_set_name][[1]]){
               cat(paste("ERROR: ",value_set_name," property contains a value that is not recognized: ", check_value,"\n",sep = ""))
