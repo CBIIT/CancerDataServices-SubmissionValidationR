@@ -313,7 +313,7 @@ df_all_terms=list()
 #for each instance of a value_set_name, note the position on the Terms and Value Sets page, create a list for each with all accepted values.
 for (x in 1:length(VSN)){
   if (!is.na(VSN[x+1])){
-    df_all_terms[as.character(df_tavs[VSN[x],1])] = as.vector(df_tavs[VSN[x]:(VSN[x+1])-1,3])
+    df_all_terms[as.character(df_tavs[VSN[x],1])] = as.vector(df_tavs[VSN[x]:(VSN[x+1]-1),3])
     
   }else{
     df_all_terms[as.character(df_tavs[VSN[x],1])] = as.vector(df_tavs[VSN[x]:dim(df_tavs)[1],3])
