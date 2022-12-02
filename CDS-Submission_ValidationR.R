@@ -476,7 +476,7 @@ for (file_type in file_types){
       if (any(is.na(SRA_checks))){
         cat(paste("ERROR: The file, ",df$file_name[file_location],", is missing at least one expected value (bases, avg_read_length, number_of_reads) that is associated with an SRA submission.\n",sep = ""))
       }
-      if (coverage_check==TRUE){
+      if (!is.na(coverage_check)){
         cat(paste("WARNING: The file, ",df$file_name[file_location],", is not expected to have a coverage value.\n",sep = ""))
       }
     #for RNA-seq data, skips the checks for coverage values to be present
@@ -485,7 +485,7 @@ for (file_type in file_types){
       if (any(is.na(SRA_checks))){
         cat(paste("ERROR: The file, ",df$file_name[file_location],", is missing at least one expected value (bases, avg_read_length, number_of_reads) that is associated with an SRA submission.\n",sep = ""))
       }
-      if (coverage_check==TRUE){
+      if (!is.na(coverage_check)){
         cat(paste("WARNING: The file, ",df$file_name[file_location],", is not expected to have a coverage value.\n",sep = ""))
       }
     }else{
