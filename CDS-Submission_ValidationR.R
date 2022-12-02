@@ -1,6 +1,6 @@
 #!/usr/bin/env Rscript
 
-#Cancer Data Services - Submission Validation-R v2.0.0
+#Cancer Data Services - Submission Validation-R v2.0.1
 
 
 ##################
@@ -128,7 +128,7 @@ if (all(expected_sheets%in%sheet_names)){
 }
 
 #If any sheet is missing, throw an overt error message then stops the process. This script pulls information from the expected sheets and requires all sheets present before running.
-template_warning="\n\n################################################################################################################################\n#                                                                                                                #\n# ERROR: Please obtain a new data template with all sheets and columns present before making further edits to this one. #\n#                                                                                                                #\n################################################################################################################################\n\n\n"
+template_warning="\n\n################################################################################################################################\n#                                                                                                                              #\n# ERROR: Please obtain a new data template with all sheets and columns present before making further edits to this one.        #\n#                                                                                                                              #\n################################################################################################################################\n\n\n"
 
 if (sheet_gone==1){
   stop(paste("\nThe following sheet(s) is/are missing in the template file: ",paste(expected_sheets[!expected_sheets%in%sheet_names],collapse = ", "), template_warning, sep = ""), call.=FALSE)
@@ -236,7 +236,7 @@ for (required_property_group in required_property_groups){
   }
   #This section will check against white space in the values of each column when there is a value present.
   for (property in required_properties){
-    if (property%in%colnames(df)){
+    if (property %in% colnames(df)){
       df_temp=df
       incomplete_required_property=0
       for (x in 1:dim(df[property])[1]){
@@ -261,6 +261,21 @@ for (required_property_group in required_property_groups){
         #Required column contains values for each entry.
         if(incomplete_required_property==0 & incomplete_required_group==0){
           cat(paste("PASS: Required property ",property," contains values for all expected entries.\n",sep = ""))
+        }
+      }
+    }
+  }
+  #For the '_id' properties, make sure there are no illegal characters and it only has "Only the following characters can be included in the ID: English letters, Arabic numerals, period (.), hyphen (-), underscore (_), at symbol (@), and the pound sign (#)."
+  for (property in required_properties){
+    if (property %in% colnames(df)){
+      if (grepl(pattern = "_id", x = property)){
+        bad_id_loc=grep(pattern = FALSE, x = grepl(pattern = '^[a-zA-Z0-9_.@#-]*$', x = df[property][[1]]))
+        if (length(bad_id_loc)>1){
+          for (bad_id in bad_id_loc){
+            if (!is.na(df[property][[1]][bad_id])){
+              cat(paste("\nERROR: The following ID, ",df[property][[1]][bad_id], ", has an illegal character (acceptable: A-z,0-9,_,.,-,@,#) in the property, ",property,".",sep = ""))
+            }
+          }
         }
       }
     }
@@ -321,7 +336,7 @@ for (x in 1:length(VSN)){
 }
 
 #Enumerated Array properties
-enum_arrays=c('therapeutic_agents',"treatment_type")
+enum_arrays=c('therapeutic_agents',"treatment_type","study_data_types","morphology","primary_site","race")
 
 #Use the list of all accepted values for each value_set_name, and compare that against the Metadata page and determine if the values, if present, match the accepted terms.
 for (value_set_name in names(df_all_terms)){
@@ -348,8 +363,8 @@ for (value_set_name in names(df_all_terms)){
     unique_values=unique_values[!is.na(unique_values)]
     if (length(unique_values)>0){
       if (!all(unique_values%in%df_all_terms[value_set_name][[1]])){
-        for (x in 1:dim(unique(df[value_set_name]))[1]){
-          check_value=unique(df[value_set_name])[x,]
+        for (x in 1:length(unique_values)){
+          check_value=unique_values[x]
           if (!is.na(check_value)){
             if (!as.character(check_value)%in%df_all_terms[value_set_name][[1]]){
               cat(paste("ERROR: ",value_set_name," property contains a value that is not recognized: ", check_value,"\n",sep = ""))
@@ -455,9 +470,29 @@ for (file_type in file_types){
     avg_read_length_check=df$avg_read_length[file_location]
     coverage_check=df$coverage[file_location]
     reads_check=df$number_of_reads[file_location]
-    SRA_checks=c(bases_check, avg_read_length_check, coverage_check, reads_check)
-    if (any(is.na(SRA_checks))){
-      cat(paste("ERROR: The file, ",df$file_name[file_location],", is missing at least one expected value (bases, avg_read_length, coverage, number_of_reads) that is associated with an SRA submissions.\n",sep = ""))
+    #for fastq files, skips the checks for coverage values to be present
+    if (file_type=="fastq"){
+      SRA_checks=c(bases_check, avg_read_length_check, reads_check)
+      if (any(is.na(SRA_checks))){
+        cat(paste("ERROR: The file, ",df$file_name[file_location],", is missing at least one expected value (bases, avg_read_length, number_of_reads) that is associated with an SRA submission.\n",sep = ""))
+      }
+      if (!is.na(coverage_check)){
+        cat(paste("WARNING: The file, ",df$file_name[file_location],", is not expected to have a coverage value.\n",sep = ""))
+      }
+    #for RNA-seq data, skips the checks for coverage values to be present
+    }else if(tolower(df$library_strategy[file_location])=="rna-seq"){
+      SRA_checks=c(bases_check, avg_read_length_check, reads_check)
+      if (any(is.na(SRA_checks))){
+        cat(paste("ERROR: The file, ",df$file_name[file_location],", is missing at least one expected value (bases, avg_read_length, number_of_reads) that is associated with an SRA submission.\n",sep = ""))
+      }
+      if (!is.na(coverage_check)){
+        cat(paste("WARNING: The file, ",df$file_name[file_location],", is not expected to have a coverage value.\n",sep = ""))
+      }
+    }else{
+      SRA_checks=c(bases_check, avg_read_length_check, coverage_check, reads_check)
+      if (any(is.na(SRA_checks))){
+        cat(paste("ERROR: The file, ",df$file_name[file_location],", is missing at least one expected value (bases, avg_read_length, coverage, number_of_reads) that is associated with an SRA submission.\n",sep = ""))
+      }
     }
   }
 }
@@ -509,31 +544,43 @@ if (dim(df_bucket)[1]>1){
 
 #Do a list of the bucket and then check the file size and name against the metadata submission.
 for (bucket_num in 1:dim(df_bucket)[1]){
+  #pull bucket metadata
   metadata_files=suppressMessages(suppressWarnings(system(command = paste("aws s3 ls --recursive s3://", df_bucket[bucket_num,],"/",sep = ""),intern = TRUE)))
   
+  #fix bucket metadata to have fixed delimeters of one space
   while (any(grepl(pattern = "  ",x = metadata_files))==TRUE){
     metadata_files=stri_replace_all_fixed(str = metadata_files,pattern = "  ",replacement = " ")
   }
   
+  #Break bucket string into a data frame and clean up
   bucket_metadata=data.frame(all_metadata=metadata_files)
-  bucket_metadata=separate(bucket_metadata, all_metadata, into = c("date","time","file_size","file_path"),sep = " ")%>%
+  bucket_metadata=separate(bucket_metadata, all_metadata, into = c("date","time","file_size","file_path"),sep = " ", extra = "merge")%>%
     select(-date, -time)%>%
     mutate(file_path=paste("s3://",df_bucket[bucket_num,],"/",file_path,sep = ""))
   bucket_metadata$file_size=as.character(bucket_metadata$file_size)
   df_bucket_specific=df[grep(pattern = df_bucket[bucket_num,], x = df$file_url_in_cds),]
+  
+  #For each row in the manifest for this bucket, check the contents of the bucket against the manifest.
   for (row in 1:dim(df_bucket_specific)[1]){
-    value=df_bucket_specific[row,'file_size'][[1]] %in% bucket_metadata['file_size'][[1]] &
-          df_bucket_specific[row,'file_url_in_cds'][[1]] %in% bucket_metadata['file_path'][[1]]
-    
-    if (value==FALSE){
-      file_value=df_bucket_specific[row,'file_url_in_cds'][[1]] %in% bucket_metadata['file_path'][[1]]
-      size_value=df_bucket_specific[row,'file_size'][[1]] %in% bucket_metadata['file_size'][[1]]
-      if (file_value==FALSE){
-        cat(paste("ERROR: The following file is not found in the AWS bucket: ", df_bucket_specific[row,'file_url_in_cds'][[1]],"\n", sep = ""))
-      }
-      if (size_value==FALSE){
+    #locate the file
+    file_name_loc=grep(pattern = TRUE, x = bucket_metadata['file_path'][[1]] %in% df_bucket_specific[row,'file_url_in_cds'][[1]])
+    #if the file is found, find that file with the correct size
+    if (!is.na(file_name_loc)){
+      if (bucket_metadata[file_name_loc,'file_size']!=df_bucket_specific[row,'file_size'][[1]]){
         cat(paste("ERROR: The following file does not have the same file size found in the AWS bucket: ", df_bucket_specific[row,'file_url_in_cds'][[1]],"\n", sep = ""))
       }
+    }else{
+      cat(paste("ERROR: The following file is not found in the AWS bucket: ", df_bucket_specific[row,'file_url_in_cds'][[1]],"\n", sep = ""))
+    }
+  }
+  
+  
+  cat("\n\nThe following section is for files that are found in the bucket, but are not located in the manifest:\n")
+  #Finally, check the bucket against the manifest to determine if there are files in the bucket that are not noted in the manifest.
+  for (bucket_file in bucket_metadata$file_path){
+    bucket_value = bucket_file  %in% df_bucket_specific['file_url_in_cds']
+    if (bucket_value==FALSE){
+      cat(paste("ERROR: The following file is found in the AWS bucket and not the manifest that was provided: ", bucket_file,"\n", sep = ""))
     }
   }
 }
