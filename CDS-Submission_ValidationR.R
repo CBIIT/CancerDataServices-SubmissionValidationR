@@ -438,7 +438,7 @@ file_types=c("bam","cram","fastq")
 
 #For each position, check to see if there are any samples that share the same library_id and make sure that the values for the required properties for SRA submission are present.      
 for (file_type in file_types){
-  single_sample_seq_files=grep(pattern = file_type, x = tolower(df$file_type))
+  single_sample_seq_files=grep(pattern = TRUE, x = tolower(df$file_type) %in% file_type)
   df_sssfi=select(df,file_name,file_size,file_type,md5sum)%>%mutate(index=1:dim(df)[1])
   df_sssfi=df_sssfi[single_sample_seq_files,]
   df_sssfu=unique(select(df_sssfi,-index))
