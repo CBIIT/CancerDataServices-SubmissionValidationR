@@ -578,7 +578,7 @@ for (bucket_num in 1:dim(df_bucket)[1]){
   cat("\n\nThe following section is for files that are found in the bucket, but are not located in the manifest:\n")
   #Finally, check the bucket against the manifest to determine if there are files in the bucket that are not noted in the manifest.
   for (bucket_file in bucket_metadata$file_path){
-    bucket_value = bucket_file  %in% df_bucket_specific['file_url_in_cds']
+    bucket_value = bucket_file  %in% df_bucket_specific['file_url_in_cds'][[1]]
     if (bucket_value==FALSE){
       cat(paste("ERROR: The following file is found in the AWS bucket and not the manifest that was provided: ", bucket_file,"\n", sep = ""))
     }
