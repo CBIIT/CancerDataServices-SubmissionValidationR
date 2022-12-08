@@ -342,7 +342,7 @@ enum_arrays=c('therapeutic_agents',"treatment_type","study_data_types","morpholo
 for (value_set_name in names(df_all_terms)){
   if (value_set_name %in% enum_arrays){
     unique_values=unique(df[value_set_name][[1]])
-    unique_values=unique(trimws(unlist(stri_split_fixed(str = unique_values,pattern = ","))))
+    unique_values=unique(trimws(unlist(stri_split_fixed(str = unique_values,pattern = ";"))))
     unique_values=unique_values[!is.na(unique_values)]
     if (length(unique_values)>0){
       if (!all(unique_values%in%df_all_terms[value_set_name][[1]])){
@@ -565,7 +565,7 @@ for (bucket_num in 1:dim(df_bucket)[1]){
     #locate the file
     file_name_loc=grep(pattern = TRUE, x = bucket_metadata['file_path'][[1]] %in% df_bucket_specific[row,'file_url_in_cds'][[1]])
     #if the file is found, find that file with the correct size
-    if (!is.na(file_name_loc)){
+    if (length(file_name_loc)!=0){
       if (bucket_metadata[file_name_loc,'file_size']!=df_bucket_specific[row,'file_size'][[1]]){
         cat(paste("ERROR: The following file does not have the same file size found in the AWS bucket: ", df_bucket_specific[row,'file_url_in_cds'][[1]],"\n", sep = ""))
       }
