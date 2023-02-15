@@ -70,6 +70,11 @@ if (is.null(opt$file)&is.null(opt$template)){
   suppressMessages(stop(call.=FALSE))
 }
 
+#Addition of NULL option for the script as it runs through the CCDI_CDS_Pipeline.
+if (opt$bucket_list=="NO_LIST_PULL_FROM_S3"){
+  opt$bucket_list=NULL
+}
+
 #Data file pathway
 file_path=file_path_as_absolute(opt$file)
 
