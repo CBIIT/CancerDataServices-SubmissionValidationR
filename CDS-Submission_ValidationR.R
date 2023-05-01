@@ -1,6 +1,6 @@
 #!/usr/bin/env Rscript
 
-#Cancer Data Services - Submission Validation-R v2.0.1
+#Cancer Data Services - Submission Validation-R
 
 
 ##################
@@ -60,7 +60,7 @@ option_list = list(
 )
 
 #create list of options and values for file input
-opt_parser = OptionParser(option_list=option_list, description = "\nCDS-Submission_ValidationR v2.0.3")
+opt_parser = OptionParser(option_list=option_list, description = "\nCDS-Submission_ValidationR v2.0.4")
 opt = parse_args(opt_parser)
 
 #If no options are presented, return --help, stop and print the following message.
@@ -421,6 +421,15 @@ phone_regex=c('[(]?[0-9]{3}[-)\ ][0-9]{3}[-][0-9]{4}')
 zip_regex=c('(^[0-9]{5}$)|(^[0-9]{9}$)|(^[0-9]{5}-[0-9]{4}$)')
 
 string_props=df_dict$Field[df_dict$`Data Type` %in% "string"]
+
+#logic to remove both GUID and md5sum from the check, as these are random/semi-random strings that are created and would never have a date placed in them.
+if ("md5sum" %in% string_props){
+  string_props=string_props[! (string_props %in% 'md5sum')]
+}
+
+if ("guid" %in% string_props){
+  string_props=string_props[! (string_props %in% 'guid')]
+}
 
 for (string in string_props){
   string_values=unique(df[string][[1]])
