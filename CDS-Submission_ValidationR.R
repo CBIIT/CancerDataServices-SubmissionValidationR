@@ -427,8 +427,8 @@ if ("md5sum" %in% string_props){
   string_props=string_props[! (string_props %in% 'md5sum')]
 }
 
-if ("dcf_indexd_guid" %in% string_props){
-  string_props=string_props[! (string_props %in% 'dcf_indexd_guid')]
+if ("guid" %in% string_props){
+  string_props=string_props[! (string_props %in% 'guid')]
 }
 
 for (string in string_props){
