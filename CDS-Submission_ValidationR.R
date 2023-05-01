@@ -422,6 +422,15 @@ zip_regex=c('(^[0-9]{5}$)|(^[0-9]{9}$)|(^[0-9]{5}-[0-9]{4}$)')
 
 string_props=df_dict$Field[df_dict$`Data Type` %in% "string"]
 
+#logic to remove both GUID and md5sum from the check, as these are random/semi-random strings that are created and would never have a date placed in them.
+if ("md5sum" %in% string_props){
+  string_props=string_props[! (string_props %in% 'md5sum')]
+}
+
+if ("dcf_indexd_guid" %in% string_props){
+  string_props=string_props[! (string_props %in% 'dcf_indexd_guid')]
+}
+
 for (string in string_props){
   string_values=unique(df[string][[1]])
   if(any(!is.na(string_values))){
