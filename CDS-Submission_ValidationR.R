@@ -283,7 +283,7 @@ for (required_property_group in required_property_groups){
   for (property in required_properties){
     if (property %in% colnames(df)){
       if (grepl(pattern = "_id", x = property)){
-        bad_id_loc=grep(pattern = FALSE, x = grepl(pattern = '^[a-zA-Z0-9_.@#-]*$', x = df[property][[1]]))
+        bad_id_loc=grep(pattern = FALSE, x = grepl(pattern = '^[a-zA-Z0-9_.@#-;]*$', x = df[property][[1]]))
         if (length(bad_id_loc)>0){
           for (bad_id in bad_id_loc){
             if (!is.na(df[property][[1]][bad_id])){
