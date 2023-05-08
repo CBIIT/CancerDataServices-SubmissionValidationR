@@ -209,11 +209,12 @@ if (all(all_properties%in%colnames(df))){
 #
 ####################
 
-cat("\nThis section is for required properties and their required groups, seen on the 'Dictionary' page of the template file.\nFor each row entry, if any value is in a required column, then all properties for that required group must also have values for that row entry:\n\n")
+cat("\nThis section is for required properties and their required groups, seen on the 'Dictionary' page of the template file.\nFor each row entry, if any value is in a required column, then all properties for that required group must also have values for that row entry:\n")
 
 #For blocks of required columns, it will check if all required columns have values if any one required column have a value. If there are only partially filled rows for required columns or the values within the required column contain leading and/or trailing white space, it will return those row positions for the required columns.
 
 for (required_property_group in required_property_groups){
+  cat("\n\n",required_property_group,sep = "")
   required_properties_dict=df_dict$Field[grepl(pattern = required_property_group,x = df_dict$`Required?`)]
   required_properties=colnames(df[colnames(df)%in%required_properties_dict])
   
@@ -221,69 +222,136 @@ for (required_property_group in required_property_groups){
   df_property_clean=remove_empty(df[required_properties],c('cols','rows'))
   
   #Counter used later for ignoring purposely empty groups of required information
-  incomplete_required_group=0
+  incomplete_required_group=FALSE
   
   #Test to see if the number of columns are the same or if a complete property was ignored.
   if (dim(df_property_clean)[2]!=dim(df[required_properties])[2]){
     if (!all(is.na(df[required_properties]))){
       missing_col=colnames(df[required_properties][!colnames(df[required_properties])%in%colnames(df_property_clean)])
-      cat(paste("ERROR: Column from a required group of properties, ",required_property_group,", was found empty on the Metadata sheet. Please add values for the following columns: ", missing_col,"\n", sep = ""))
+      cat(paste("\nERROR: The following required property columns were found empty: ", missing_col, sep = ""))
+      incomplete_required_group=TRUE
     }
-  #Test to see if there are complete cases, values for all properties.    
+    #Test to see if there are complete cases, values for all properties.    
   }else if(!all(complete.cases(df[required_properties]))){
+    error_title=FALSE
     for (row in 1:dim(df[required_properties])[1]){
       if (!complete.cases(df[required_properties][row,])){
         #if a row was left completely blank, assumed to be on purpose, then it will be skipped.
         if (!all(is.na(df[required_properties][row,]))){
-          cat(paste("ERROR: Missing values were found in the required property group ",required_property_group,", on the Metadata sheet. Please check the following row: ", row+1,"\n", sep = ""))
-          incomplete_required_group=1
+          
+          #If there are bad rows, print them out
+          if (!error_title){
+            cat("\nERROR: Missing values were found in the required property group ",required_property_group,", on the Metadata sheet. Please check the following rows: \n\t", sep = "")
+            error_title=TRUE
+            bad_row_indent_counter=0
+          }
+          #create a cleaner list, where there are line break to number lists.
+          bad_row_indent_counter=bad_row_indent_counter+1
+          #note the bad row
+          cat(row+1, sep = "")
+          
+          #if the counter hits the value, a new line and tabs will be made to keep the list organized, and the counter is reset.
+          if (bad_row_indent_counter==25){
+            cat("\n\t",sep = "")
+            bad_row_indent_counter=0
+          }else{
+            cat(", ", sep = "")
+          }
+        }
+        incomplete_required_group=TRUE
+        #if it is the last instance of the bad row, do a return for next property
+        if (row == dim(df[required_properties])[1]){
+          cat('\n',sep = "")
+          #reset counter to make sure no strange formats
+          bad_row_indent_counter=0
+          #otherwise, give a comma and output next row.
         }
       }
     }
-    #if there was not one instance of tripping the incomplete_required_group flag, then it will print that values are present for complete rows of required data for a required group.
-    if (incomplete_required_group==0){
-      cat(paste("WARNING: Required property group ",required_property_group," contains values for all entries that are assumed to have values based on the submitted data structure.\n",sep = ""))
-    }
+  }
+  
+  #if there was not one instance of tripping the incomplete_required_group flag, then it will print that values are present for complete rows of required data for a required group.
+  if (incomplete_required_group){
+    cat(paste("\nWARNING: Required property group ",required_property_group," contains values for all entries that are assumed to have values based on the submitted data structure.",sep = ""))
   }else{
     #if none of these situations are triggered, then the column likely has all values present in the required property group for each entry.
-    cat(paste("PASS: Required property group ",required_property_group," contains values for all expected entries.\n",sep = ""))
+    cat(paste("\nPASS: Required property group ",required_property_group," contains values for all expected entries.",sep = ""))
   }
+  
+  
+  
   #This section will check against white space in the values of each column when there is a value present.
   for (property in required_properties){
     if (property %in% colnames(df)){
-      df_temp=df
-      incomplete_required_property=0
-      for (x in 1:dim(df[property])[1]){
-        df_temp[property][x,]=trimws(df[property][x,])
-      }
-      #Return value positions that are either empty (NA) or contain leading/trailing white space in the value for the required column.
-      if (!all(df_temp[property]==df[property]) | any(is.na(df_temp[property]==df[property]))){
-        position_mis=grep(pattern = FALSE, x = df_temp[property]==df[property])
-        position_na=grep(pattern = TRUE, x=(is.na(df_temp[property]==df[property])))
-        position=c(position_mis,position_na)
-        for (instance in position){
-          if (!all(is.na(df_temp[required_properties][instance,]))){
-            cat(paste("ERROR: Missing values and/or leading/trailing white space in the required ",property," property, on the Metadata sheet. Please check the following position: ", instance+1,"\n", sep = ""))
-            incomplete_required_property=1
+      if (!(property %in% missing_col)){
+        error_title=FALSE
+        df_temp=df
+        incomplete_required_property=FALSE
+        for (x in 1:dim(df[property])[1]){
+          df_temp[property][x,]=trimws(df[property][x,])
+        }
+        #Return value positions that are either empty (NA) or contain leading/trailing white space in the value for the required column.
+        if (!all(df_temp[property]==df[property]) | any(is.na(df_temp[property]==df[property]))){
+          position_mis=grep(pattern = FALSE, x = df_temp[property]==df[property])
+          position_na=grep(pattern = TRUE, x=(is.na(df_temp[property]==df[property])))
+          position=c(position_mis,position_na)
+          for (instance in position){
+            if (!all(is.na(df_temp[required_properties][instance,]))){
+              
+              #If there are bad rows, print them out
+              if (!error_title){
+                cat("\t\nERROR: Missing values and/or leading/trailing white space in the required ",property," property, for the following positions: \n\t\t", sep = "")
+                error_title=TRUE
+                bad_row_indent_counter=0
+              }
+              #create a cleaner list, where there are line break to number lists.
+              bad_row_indent_counter=bad_row_indent_counter+1
+              #note the bad row
+              cat(instance+1, sep = "")
+              
+              #if the counter hits the value, a new line and tabs will be made to keep the list organized, and the counter is reset.
+              if (bad_row_indent_counter==25){
+                cat("\n\t",sep = "")
+                bad_row_indent_counter=0
+              }else{
+                #otherwise, give a comma and output next row.
+                cat(", ", sep = "")
+              }
+              #if it is the last instance of the bad row, do a return for next property
+              if (instance == position[length(position)]){
+                cat('\n',sep = "")
+                #reset counter to make sure no strange formats
+                bad_row_indent_counter=0
+              }
+              incomplete_required_property=TRUE
+             
+            }
+            
           }
-        }
-        #Returns a warning that there is likely empty rows on purpose due to not all entries having a value for that section of required input.
-        if (incomplete_required_property==0 & !all(is.na(df[required_properties]))){
-          cat(paste("WARNING: Required property ",property," contains values for all entries that are assumed to have values based on the submitted data structure.\n",sep = ""))
-        }
-      }else{
-        #Required column contains values for each entry.
-        if(incomplete_required_property==0 & incomplete_required_group==0){
-          cat(paste("PASS: Required property ",property," contains values for all expected entries.\n",sep = ""))
+          #Returns a warning that there is likely empty rows on purpose due to not all entries having a value for that section of required input.
+          if (!incomplete_required_property & !all(is.na(df[required_properties]))){
+            cat(paste("\nWARNING: Required property ",property," contains values for all entries that are assumed to have values based on the submitted data structure.",sep = ""))
+          }
+        }else{
+          #Required column contains values for each entry.
+          if(!incomplete_required_property){
+            cat(paste("\nPASS: Required property ",property," contains values for all expected entries.",sep = ""))
+          }
         }
       }
     }
   }
-  #For the '_id' properties, make sure there are no illegal characters and it only has "Only the following characters can be included in the ID: English letters, Arabic numerals, period (.), hyphen (-), underscore (_), at symbol (@), and the pound sign (#)."
+}
+  
+  
+#For the '_id' properties, make sure there are no illegal characters and it only has "Only the following characters can be included in the ID: English letters, Arabic numerals, period (.), hyphen (-), underscore (_), at symbol (@), and the pound sign (#)."
+for (required_property_group in required_property_groups){
+    required_properties_dict=df_dict$Field[grepl(pattern = required_property_group,x = df_dict$`Required?`)]
+    required_properties=colnames(df[colnames(df)%in%required_properties_dict])  
   for (property in required_properties){
     if (property %in% colnames(df)){
       if (grepl(pattern = "_id", x = property)){
-        bad_id_loc=grep(pattern = FALSE, x = grepl(pattern = '^[a-zA-Z0-9_.@#-;]*$', x = df[property][[1]]))
+        bad_id_loc=grep(pattern = FALSE, x = grepl(pattern = '^[a-zA-Z0-9_.@#;-]*$', df[property][[1]],perl = TRUE))
         if (length(bad_id_loc)>0){
           for (bad_id in bad_id_loc){
             if (!is.na(df[property][[1]][bad_id])){
@@ -296,7 +364,7 @@ for (required_property_group in required_property_groups){
   }
 }
 
-#Define the required properties again.
+#Define the required properties to everything.
 required_properties=df_dict$Field[!is.na(df_dict$`Required?`)]
 
 #Check for white space issues in non-required columns. There is no enforcement that a column has to be completely filled or have values based on other related data inputs.
@@ -304,6 +372,7 @@ for (property in all_properties[!all_properties%in%required_properties]){
   if (property%in%colnames(df)){
     if(any(!is.na(unique(df[property])))){
       df_temp=df
+      error_title=FALSE
       for (x in 1:dim(df[property])[1]){
         df_temp[property][x,]=trimws(df[property][x,])
       }
@@ -313,7 +382,32 @@ for (property in all_properties[!all_properties%in%required_properties]){
         position=c(position_mis,position_na)
         for (instance in position){
           if (!all(is.na(df_temp[property][instance,]))){
-            cat(paste("ERROR: Leading/trailing white space in the ",property," property, on the Metadata sheet. Please check the following position: ", instance+1,"\n", sep = ""))
+
+            #If there are bad rows, print them out
+            if (!error_title){
+              cat("\t\nERROR: Missing values and/or leading/trailing white space in the required ",property," property, for the following positions: \n\t\t", sep = "")
+              error_title=TRUE
+              bad_row_indent_counter=0
+            }
+            #create a cleaner list, where there are line break to number lists.
+            bad_row_indent_counter=bad_row_indent_counter+1
+            #note the bad row
+            cat(instance+1, sep = "")
+            
+            #if the counter hits the value, a new line and tabs will be made to keep the list organized, and the counter is reset.
+            if (bad_row_indent_counter==25){
+              cat("\n\t",sep = "")
+              bad_row_indent_counter=0
+            }else{
+              #otherwise, give a comma and output next row.
+              cat(", ", sep = "")
+            }
+            #if it is the last instance of the bad row, do a return for next property
+            if (instance == position[length(position)]){
+              cat('\n',sep = "")
+              #reset counter to make sure no strange formats
+              bad_row_indent_counter=0
+            }
           }
         }
       }
@@ -354,6 +448,7 @@ enum_arrays=c('therapeutic_agents',"treatment_type","study_data_types","morpholo
 
 #Use the list of all accepted values for each value_set_name, and compare that against the Metadata page and determine if the values, if present, match the accepted terms.
 for (value_set_name in names(df_all_terms)){
+  error_title=FALSE
   if (value_set_name %in% enum_arrays){
     unique_values=unique(df[value_set_name][[1]])
     unique_values=unique(trimws(unlist(stri_split_fixed(str = unique_values,pattern = ";"))))
@@ -364,8 +459,32 @@ for (value_set_name in names(df_all_terms)){
           check_value=unique_values[x]
           if (!is.na(check_value)){
             if (!as.character(check_value)%in%df_all_terms[value_set_name][[1]]){
-              cat(paste("ERROR: ",value_set_name," property contains a value that is not recognized: ", check_value,"\n",sep = ""))
+              #If there are bad rows, print them out
+              if (!error_title){
+                cat("\nERROR: ",value_set_name," property contains a value that is not recognized: \n\t", sep = "")
+                error_title=TRUE
+                bad_row_indent_counter=0
+              }
+              #create a cleaner list, where there are line break to number lists.
+              bad_row_indent_counter=bad_row_indent_counter+1
+              #note the bad row
+              cat(check_value, sep = "")
+              
+              #if the counter hits the value, a new line and tabs will be made to keep the list organized, and the counter is reset.
+              if (bad_row_indent_counter==5){
+                cat("\n\t",sep = "")
+                bad_row_indent_counter=0
+              }else{
+                #otherwise, give a comma and output next row.
+                cat(", ", sep = "")
+              }
             }
+          }
+          #if it is the last instance of the bad row, do a return for next property
+          if (x == length(unique_values)){
+            cat('\n',sep = "")
+            #reset counter to make sure no strange formats
+            bad_row_indent_counter=0
           }
         }
       }else{
@@ -373,6 +492,7 @@ for (value_set_name in names(df_all_terms)){
       }
     }
   }else if (value_set_name%in%colnames(df)){
+    error_title=FALSE
     unique_values=unique(df[value_set_name][[1]])
     unique_values=unique_values[!is.na(unique_values)]
     if (length(unique_values)>0){
@@ -381,9 +501,41 @@ for (value_set_name in names(df_all_terms)){
           check_value=unique_values[x]
           if (!is.na(check_value)){
             if (!as.character(check_value)%in%df_all_terms[value_set_name][[1]]){
-              cat(paste("ERROR: ",value_set_name," property contains a value that is not recognized: ", check_value,"\n",sep = ""))
+              
+              #If there are bad rows, print them out
+              if (!error_title){
+                cat("\nERROR: ",value_set_name," property contains a value that is not recognized: \n\t", sep = "")
+                error_title=TRUE
+                bad_row_indent_counter=0
+              }
+              #create a cleaner list, where there are line break to number lists.
+              bad_row_indent_counter=bad_row_indent_counter+1
+              #note the bad row
+              cat(check_value, sep = "")
+              
+              #if the counter hits the value, a new line and tabs will be made to keep the list organized, and the counter is reset.
+              if (bad_row_indent_counter==5){
+                cat("\n\t",sep = "")
+                bad_row_indent_counter=0
+              }else{
+                #otherwise, give a comma and output next row.
+                cat(", ", sep = "")
+              }
             }
           }
+          #if it is the last instance of the bad row, do a return for next property
+          if (x == length(unique_values)){
+            cat('\n',sep = "")
+            #reset counter to make sure no strange formats
+            bad_row_indent_counter=0
+          }
+              
+              
+              
+              
+          #     cat(paste("ERROR: ",value_set_name," property contains a value that is not recognized: ", check_value,"\n",sep = ""))
+          #   }
+          # }
         }
       }else{
         cat(paste("PASS:",value_set_name,"property contains all valid values.\n"))
@@ -432,6 +584,7 @@ if ("guid" %in% string_props){
 }
 
 for (string in string_props){
+  error_title=FALSE
   string_values=unique(df[string][[1]])
   if(any(!is.na(string_values))){
     for (value in string_values){
@@ -441,20 +594,38 @@ for (string in string_props){
       phone_hit=grep(pattern = phone_regex, x = value)
       zip_hit=grep(pattern = zip_regex, x = value)
       
-      if (length(date_hit)!=0){
-        cat(paste("\nWARNING: The following property, ",string,", contains a value based on the regex, '",names(date_hit)[1] ,"', that could be interpreted as a date: ",value,sep = ""))
-      }
-      
-      if (length(socsec_hit)!=0){
-        cat(paste("\nWARNING: The following property, ",string,", contains a value based on the regex, '",socsec_regex ,"', that could be interpreted as a social security number: ",value,sep = ""))
-      }
-      
-      if (length(phone_hit)!=0){
-        cat(paste("\nWARNING: The following property, ",string,", contains a value based on the regex, '",phone_regex ,"', that could be interpreted as a phone number: ",value,sep = ""))
-      }
-      
-      if (length(zip_hit)!=0){
-        cat(paste("\nWARNING: The following property, ",string,", contains a value based on the regex, '",zip_regex ,"', that could be interpreted as a zip code: ",value,sep = ""))
+      #if there is any hit
+      if (any(length(date_hit)!=0 |
+              length(socsec_hit)!=0 | 
+              length(phone_hit)!=0 |
+              length(zip_hit)!=0)){
+        
+        #If there are bad rows, print them out
+        if (!error_title){
+          cat(paste("\tWARNING: The following property, ",string,", contains a value that could be interpreted as a date/social security number/phone number/zip code: \n\t\t",sep = ""))
+          error_title=TRUE
+          bad_row_indent_counter=0
+        }
+        #create a cleaner list, where there are line break to number lists.
+        bad_row_indent_counter=bad_row_indent_counter+1
+        #value location
+        bad_row=grep(pattern = TRUE, x = string_values %in% value)
+        #note the bad row
+        cat(bad_row+1, sep = "")
+        #if it is the last instance of the bad row, do a return for next property
+        if (value == string_values[length(string_values)]){
+          cat('\n',sep = "")
+          #reset counter to make sure no strange formats
+          bad_row_indent_counter=0
+          #otherwise, give a comma and output next row.
+        }else{
+          cat(", ", sep = "")
+        }
+        #if the counter hits the value, a new line and tabs will be made to keep the list organized, and the counter is reset.
+        if (bad_row_indent_counter==25){
+          cat("\n\t\t",sep = "")
+          bad_row_indent_counter=0
+        }
       }
     }
   }
@@ -467,21 +638,41 @@ for (string in string_props){
 #
 #################
 
-cat("\n\n")
+cat("\nThis section will display any participants that have multiple instances of metadata that are not the same:\n")
 participant_list=unique(df$participant_id)
+participant_meta=c('gender','ethnicity','race')
 
-for (participant in 1:length(participant_list)){
-  gender=unique(df$gender[df$participant_id %in% participant_list[participant]])
-  ethnicity=unique(df$ethnicity[df$participant_id %in% participant_list[participant]])
-  race=unique(df$race[df$participant_id %in% participant_list[participant]])
-  if (length(gender)>1){
-    cat(paste("\nERROR:The following participant_id, ",participant_list[participant],", is linked to more than one value for gender.\n",sep = "" ))
-  }
-  if (length(ethnicity)>1){
-    cat(paste("\nERROR: The following participant_id, ",participant_list[participant],", is linked to more than one value for ethnicity.\n",sep = "" ))
-  }
-  if (length(race)>1){
-    cat(paste("\nERROR: The following participant_id, ",participant_list[participant],", is linked to more than one value for race.\n",sep = "" ))
+for (meta in participant_meta){
+  error_title=FALSE
+  for (participant in 1:length(participant_list)){
+    meta_loc=unique(df[df$participant_id %in% participant_list[participant],meta])[[1]]
+    
+    if (length(meta_loc)>1){
+      
+      if (!error_title){
+        cat(paste("\n\tERROR: The following participant_ids are linked to more than one value for ",meta,":\n\t\t",sep = ""))
+        error_title=TRUE
+        bad_row_indent_counter=0
+      }
+      #create a cleaner list, where there are line break to number lists.
+      bad_row_indent_counter=bad_row_indent_counter+1
+      #note the bad row
+      cat(participant_list[participant], sep = "")
+      #if it is the last instance of the bad row, do a return for next property
+      if (participant_list[participant] == participant_list[length(participant_list)]){
+        cat('\n',sep = "")
+        #reset counter to make sure no strange formats
+        bad_row_indent_counter=0
+        #otherwise, give a comma and output next row.
+      }else{
+        cat(", ", sep = "")
+      }
+      #if the counter hits the value, a new line and tabs will be made to keep the list organized, and the counter is reset.
+      if (bad_row_indent_counter==10){
+        cat("\n\t\t",sep = "")
+        bad_row_indent_counter=0
+      }
+    }
   }
 }
 
@@ -670,10 +861,39 @@ for (bucket_num in 1:dim(df_bucket)[1]){
   
   cat("\n\nThe following section is for files that are found in the bucket, but are not located in the manifest:\n")
   #Finally, check the bucket against the manifest to determine if there are files in the bucket that are not noted in the manifest.
+  
+  error_title=FALSE
   for (bucket_file in bucket_metadata$file_path){
     bucket_value = bucket_file  %in% df_bucket_specific['file_url_in_cds'][[1]]
     if (bucket_value==FALSE){
-      cat(paste("ERROR: The following file is found in the AWS bucket and not the manifest that was provided: ", bucket_file,"\n", sep = ""))
+      
+      
+      if (!error_title){
+        cat(paste("\n\tERROR: The following file is found in the AWS bucket and not the manifest that was provided:\n\t\t",sep = ""))
+        error_title=TRUE
+        bad_row_indent_counter=0
+      }
+      #create a cleaner list, where there are line break to number lists.
+      bad_row_indent_counter=bad_row_indent_counter+1
+      #note the bad row
+      cat(bucket_file, sep = "")
+      #if it is the last instance of the bad row, do a return for next property
+      if (bucket_file == bucket_metadata$file_path[length(bucket_metadata$file_path)]){
+        cat('\n',sep = "")
+        #reset counter to make sure no strange formats
+        bad_row_indent_counter=0
+        #otherwise, give a comma and output next row.
+      }else{
+        cat("", sep = "")
+      }
+      #if the counter hits the value, a new line and tabs will be made to keep the list organized, and the counter is reset.
+      if (bad_row_indent_counter==1){
+        cat("\n\t\t",sep = "")
+        bad_row_indent_counter=0
+      }
+      
+
+      # cat(paste("ERROR: The following file is found in the AWS bucket and not the manifest that was provided: ", bucket_file,"\n", sep = ""))
     }
   }
 }
