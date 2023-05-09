@@ -283,66 +283,64 @@ for (required_property_group in required_property_groups){
   #This section will check against white space in the values of each column when there is a value present.
   for (property in required_properties){
     if (property %in% colnames(df)){
-      if (!(property %in% missing_col)){
-        error_title=FALSE
-        df_temp=df
-        incomplete_required_property=FALSE
-        for (x in 1:dim(df[property])[1]){
-          df_temp[property][x,]=trimws(df[property][x,])
-        }
-        #Return value positions that are either empty (NA) or contain leading/trailing white space in the value for the required column.
-        if (!all(df_temp[property]==df[property]) | any(is.na(df_temp[property]==df[property]))){
-          position_mis=grep(pattern = FALSE, x = df_temp[property]==df[property])
-          position_na=grep(pattern = TRUE, x=(is.na(df_temp[property]==df[property])))
-          position=c(position_mis,position_na)
-          for (instance in position){
-            if (!all(is.na(df_temp[required_properties][instance,]))){
-              
-              #If there are bad rows, print them out
-              if (!error_title){
-                cat("\t\nERROR: Missing values and/or leading/trailing white space in the required ",property," property, for the following positions: \n\t\t", sep = "")
-                error_title=TRUE
-                bad_row_indent_counter=0
-              }
-              #create a cleaner list, where there are line break to number lists.
-              bad_row_indent_counter=bad_row_indent_counter+1
-              #note the bad row
-              cat(instance+1, sep = "")
-              
-              #if the counter hits the value, a new line and tabs will be made to keep the list organized, and the counter is reset.
-              if (bad_row_indent_counter==25){
-                cat("\n\t",sep = "")
-                bad_row_indent_counter=0
-              }else{
-                #otherwise, give a comma and output next row.
-                cat(", ", sep = "")
-              }
-              #if it is the last instance of the bad row, do a return for next property
-              if (instance == position[length(position)]){
-                cat('\n',sep = "")
-                #reset counter to make sure no strange formats
-                bad_row_indent_counter=0
-              }
-              incomplete_required_property=TRUE
-             
+      error_title=FALSE
+      df_temp=df
+      incomplete_required_property=FALSE
+      for (x in 1:dim(df[property])[1]){
+        df_temp[property][x,]=trimws(df[property][x,])
+      }
+      #Return value positions that are either empty (NA) or contain leading/trailing white space in the value for the required column.
+      if (!all(df_temp[property]==df[property]) | any(is.na(df_temp[property]==df[property]))){
+        position_mis=grep(pattern = FALSE, x = df_temp[property]==df[property])
+        position_na=grep(pattern = TRUE, x=(is.na(df_temp[property]==df[property])))
+        position=c(position_mis,position_na)
+        for (instance in position){
+          if (!all(is.na(df_temp[required_properties][instance,]))){
+            
+            #If there are bad rows, print them out
+            if (!error_title){
+              cat("\t\nERROR: Missing values and/or leading/trailing white space in the required ",property," property, for the following positions: \n\t\t", sep = "")
+              error_title=TRUE
+              bad_row_indent_counter=0
             }
+            #create a cleaner list, where there are line break to number lists.
+            bad_row_indent_counter=bad_row_indent_counter+1
+            #note the bad row
+            cat(instance+1, sep = "")
+            
+            #if the counter hits the value, a new line and tabs will be made to keep the list organized, and the counter is reset.
+            if (bad_row_indent_counter==25){
+              cat("\n\t",sep = "")
+              bad_row_indent_counter=0
+            }else{
+              #otherwise, give a comma and output next row.
+              cat(", ", sep = "")
+            }
+            #if it is the last instance of the bad row, do a return for next property
+            if (instance == position[length(position)]){
+              cat('\n',sep = "")
+              #reset counter to make sure no strange formats
+              bad_row_indent_counter=0
+            }
+            incomplete_required_property=TRUE
             
           }
-          #Returns a warning that there is likely empty rows on purpose due to not all entries having a value for that section of required input.
-          if (!incomplete_required_property & !all(is.na(df[required_properties]))){
-            cat(paste("\nWARNING: Required property ",property," contains values for all entries that are assumed to have values based on the submitted data structure.",sep = ""))
-          }
-        }else{
-          #Required column contains values for each entry.
-          if(!incomplete_required_property){
-            cat(paste("\nPASS: Required property ",property," contains values for all expected entries.",sep = ""))
-          }
+          
+        }
+        #Returns a warning that there is likely empty rows on purpose due to not all entries having a value for that section of required input.
+        if (!incomplete_required_property & !all(is.na(df[required_properties]))){
+          cat(paste("\nWARNING: Required property ",property," contains values for all entries that are assumed to have values based on the submitted data structure.",sep = ""))
+        }
+      }else{
+        #Required column contains values for each entry.
+        if(!incomplete_required_property){
+          cat(paste("\nPASS: Required property ",property," contains values for all expected entries.",sep = ""))
         }
       }
     }
   }
 }
-  
+
   
 #For the '_id' properties, make sure there are no illegal characters and it only has "Only the following characters can be included in the ID: English letters, Arabic numerals, period (.), hyphen (-), underscore (_), at symbol (@), and the pound sign (#)."
 for (required_property_group in required_property_groups){
