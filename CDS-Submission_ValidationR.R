@@ -789,6 +789,11 @@ for (row_pos in 1:dim(df)[1]){
         cat(paste("ERROR: The file in row ",row_pos+1,", has a md5sum value that does not follow the md5sum regular expression.\n",sep = ""))
       }
     }
+    if (!is.na(df$file_url_in_cds[row_pos])){
+      if (df$file_name[row_pos]!=basename(df$file_url_in_cds[row_pos])){
+        cat(paste("ERROR: The file ",df_file$file_name[row_pos],", has a file_name that does not match the file name in the url.\n",sep = ""))
+      }
+    }
   }
 }
 
