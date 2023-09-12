@@ -686,7 +686,7 @@ cat("\nThis submission and subsequent submission files derived from this templat
 #For each library_id check to see how many instances it is found.
 for (library_id in unique(df$library_id)){
   if(!is.na(library_id)){
-    grep_instances=unique(df$sample_id[grep(pattern = library_id, x = df$library_id)])
+    grep_instances=unique(df$sample_id[grep(pattern = TRUE, x = df$library_id %in% library_id)])
     if (length(grep_instances)>1){
       cat(paste("WARNING: The library_id, ",library_id,", has multiple samples associated with it, ", grep_instances ,". This setup will cause issues when submitting to SRA.\n",sep = ""))
     }
