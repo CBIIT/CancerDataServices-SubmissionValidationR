@@ -544,6 +544,165 @@ for (value_set_name in names(df_all_terms)){
 
 ################
 #
+# Integer and numeric checks
+#
+################
+
+cat("\nThis section will display any values in properties that are expected to be either numeric or integer based on the Dictionary, but have values that are not:\n----------\n")
+
+#Since the files are read in as "all strings" to ensure that the file can be ingested, this can hide issues with integers and numbers.
+#This check will look at the dictionary to determine which properties should be integers and numbers and then force the strings into those types and make checks.
+
+
+#initialize data frames and properties for tests
+
+num_properties=c()
+int_properties=c()
+
+#for each prop
+for (prop in all_properties){
+  #filter out linking properties.
+  if (!grepl(pattern = "\\.", x = prop)){
+    #if the filtered dictionary for that colname has a type equal to number
+    if((df_dict%>%filter(Field == prop))$`Data Type` == "number"){
+      #add that colname to the df_dict_num list
+      num_properties=c(num_properties,prop)
+    }
+    #if the filtered dictionary for that colname has a type equal to integer
+    if((df_dict%>%filter(Field == prop))$`Data Type` == "integer"){
+      #add that colname to the df_dict_int list
+      int_properties=c(int_properties,prop)
+    }
+  }
+}
+
+
+#NUMERIC CHECKS
+if (length(num_properties)>0){
+  #for each number property
+  for (num_prop in num_properties){
+    error_title=TRUE
+    
+    #create empty vector for error rows
+    error_rows=c()
+    
+    #go through each row
+    for (row in 1:dim(df)[1]){
+      if (!is.na(df[row,num_prop])){
+        test_value=suppressWarnings(as.numeric(df[row,num_prop]))
+        
+        #if you cannot convert the value to a numeric, and check it is a number
+        if (is.na(test_value)){
+          #gather values to throw an error
+          error_rows=c(error_rows,row)
+        }
+      }
+    }
+    if (length(error_rows)>0){
+      error_title=FALSE
+      
+      if (!error_title){
+        cat(paste("\n\tERROR: A non-numeric value was found in an expected numeric property row: ",num_prop,"\n\t\t",sep = ""))
+        error_title=TRUE
+        bad_row_indent_counter=0
+      }
+      
+      for (bad_row in error_rows){
+        #create a cleaner list, where there are line break to number lists.
+        bad_row_indent_counter=bad_row_indent_counter+1
+        
+        #note the bad row
+        cat(bad_row+1, sep = "")
+        
+        #if it is the last instance of the bad row, do a return for next property
+        if (bad_row == error_rows[length(error_rows)]){
+          cat('\n',sep = "")
+          #reset counter to make sure no strange formats
+          bad_row_indent_counter=0
+          #otherwise, give a comma and output next row.
+        }else{
+          cat(", ", sep = "")
+        }
+        #if the counter hits the value, a new line and tabs will be made to keep the list organized, and the counter is reset.
+        if (bad_row_indent_counter==25){
+          cat("\n\t\t",sep = "")
+          bad_row_indent_counter=0
+        }
+      }
+    }
+  }
+}
+
+#INTEGER CHECKS
+if (length(int_properties)>0){
+  #for int properties
+  for (int_prop in int_properties){
+    error_title=TRUE
+    
+    #create empty vector for error rows
+    error_rows=c()
+    
+    #go through each row
+    for (row in 1:dim(df)[1]){
+      if (!is.na(df[row,int_prop])){
+        
+        #We need a different check as int are more structured and thus large ints cannot easily be converted from strings.
+        #Thus we are going to double check via regex that the string is only made of numerals.
+        int_test=grepl(pattern ="^[0-9-]+$" ,x = df[row,int_prop])
+        
+        if (int_test){
+          test_value="actual_integer"
+        }else{
+          test_value=NA
+        }
+        
+        
+        #if you cannot convert the value to a integer, and check it is a integer
+        if (is.na(test_value)){
+          #gather values to throw an error
+          error_rows=c(error_rows,row)
+        }
+      }
+    }
+    if (length(error_rows)>0){
+      error_title=FALSE
+      
+      if (!error_title){
+        cat(paste("\n\tERROR: A non-integer value was found in an expected integer property row: ",int_prop,"\n\t\t",sep = ""))
+        error_title=TRUE
+        bad_row_indent_counter=0
+      }
+      
+      for (bad_row in error_rows){
+        #create a cleaner list, where there are line break to number lists.
+        bad_row_indent_counter=bad_row_indent_counter+1
+        
+        #note the bad row
+        cat(bad_row+1, sep = "")
+        
+        #if it is the last instance of the bad row, do a return for next property
+        if (bad_row == error_rows[length(error_rows)]){
+          cat('\n',sep = "")
+          #reset counter to make sure no strange formats
+          bad_row_indent_counter=0
+          #otherwise, give a comma and output next row.
+        }else{
+          cat(", ", sep = "")
+        }
+        #if the counter hits the value, a new line and tabs will be made to keep the list organized, and the counter is reset.
+        if (bad_row_indent_counter==25){
+          cat("\n\t\t",sep = "")
+          bad_row_indent_counter=0
+        }
+      }
+    }
+  }
+}
+
+
+
+################
+#
 # Regex Checks
 #
 ################
@@ -811,9 +970,10 @@ df_bucket=select(df, file_url_in_cds)%>%
   separate(file_url_in_cds,into = c("s3","blank","bucket","the_rest"),sep = "/",extra = "merge")%>%
   select(-s3,-blank,-the_rest)
 df_bucket=unique(df_bucket)
+df_bucket=df_bucket[!is.na(df_bucket)]
 
 #Check to see if there is only one bucket associated with the submission. It is not required, but it is likely that there would only be one bucket.
-if (dim(df_bucket)[1]>1){
+if (length(df_bucket)>1){
   cat(paste("WARNING: There are more than one aws bucket that is associated with this metadata file: ", df_bucket$bucket,".\n",sep = ""))
   cat("\n")
   if (!is.null(opt$bucket_list)){
@@ -822,10 +982,10 @@ if (dim(df_bucket)[1]>1){
 }
 
 #Do a list of the bucket and then check the file size and name against the metadata submission.
-for (bucket_num in 1:dim(df_bucket)[1]){
+for (bucket_num in 1:length(df_bucket)){
   #pull bucket metadata
   if (is.null(opt$bucket_list)){
-    metadata_files=suppressMessages(suppressWarnings(system(command = paste("aws s3 ls --recursive s3://", df_bucket[bucket_num,],"/",sep = ""),intern = TRUE)))
+    metadata_files=suppressMessages(suppressWarnings(system(command = paste("aws s3 ls --recursive s3://", df_bucket[bucket_num],"/",sep = ""),intern = TRUE)))
     
     #fix bucket metadata to have fixed delimeters of one space
     while (any(grepl(pattern = "  ",x = metadata_files))==TRUE){
@@ -836,16 +996,16 @@ for (bucket_num in 1:dim(df_bucket)[1]){
     bucket_metadata=data.frame(all_metadata=metadata_files)
     bucket_metadata=separate(bucket_metadata, all_metadata, into = c("date","time","file_size","file_path"),sep = " ", extra = "merge")%>%
       select(-date, -time)%>%
-      mutate(file_path=paste("s3://",df_bucket[bucket_num,],"/",file_path,sep = ""))
+      mutate(file_path=paste("s3://",df_bucket[bucket_num],"/",file_path,sep = ""))
     
   }else if (!is.null(opt$bucket_list)){
     bucket_metadata=suppressMessages(read_tsv(file = bucket_list_path, col_names = F))
     colnames(bucket_metadata)<-c("file_size","file_path")
-    bucket_metadata=mutate(bucket_metadata, file_path=paste("s3://",df_bucket[bucket_num,],"/",file_path,sep = ""))
+    bucket_metadata=mutate(bucket_metadata, file_path=paste("s3://",df_bucket[bucket_num],"/",file_path,sep = ""))
   }
   
   bucket_metadata$file_size=as.character(bucket_metadata$file_size)
-  df_bucket_specific=df[grep(pattern = df_bucket[bucket_num,], x = df$file_url_in_cds),]
+  df_bucket_specific=df[grep(pattern = df_bucket[bucket_num], x = df$file_url_in_cds),]
   
   #For each row in the manifest for this bucket, check the contents of the bucket against the manifest.
   for (row in 1:dim(df_bucket_specific)[1]){
