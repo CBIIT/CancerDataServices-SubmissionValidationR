@@ -974,7 +974,7 @@ df_bucket=df_bucket[!is.na(df_bucket)]
 
 #Check to see if there is only one bucket associated with the submission. It is not required, but it is likely that there would only be one bucket.
 if (length(df_bucket)>1){
-  cat(paste("WARNING: There are more than one aws bucket that is associated with this metadata file: ", df_bucket$bucket,".\n",sep = ""))
+  cat(paste("WARNING: There are more than one aws bucket that is associated with this metadata file: ", df_bucket,".\n",sep = ""))
   cat("\n")
   if (!is.null(opt$bucket_list)){
     cat(paste("\tWARNING: A bucket list was supplied, it will need to contain all the bucket's files in that one list.\n\n",sep = ""))
