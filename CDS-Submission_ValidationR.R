@@ -166,8 +166,8 @@ all_properties=all_properties[!grepl(pattern = " ",x = all_properties)]
 #Remove the Field column header that is repeated
 all_properties=all_properties[!grepl(pattern = "Field",x = all_properties)]
 #Pull out required property groups
-required_property_groups=unique(df_dict$`Required?`[!is.na(df_dict$`Required?`)])
-required_properties=df_dict$Field[!is.na(df_dict$`Required?`)]
+required_property_groups=unique(df_dict$`Required`[!is.na(df_dict$`Required`)])
+required_properties=df_dict$Field[!is.na(df_dict$`Required`)]
 
 #Read in metadata page/file to check against the expected/required properties. 
 #Further logic has been setup to accept the original XLSX as well as a TSV or CSV format.
@@ -215,7 +215,7 @@ cat("\nThis section is for required properties and their required groups, seen o
 
 for (required_property_group in required_property_groups){
   cat("\n\n",required_property_group,sep = "")
-  required_properties_dict=df_dict$Field[grepl(pattern = required_property_group,x = df_dict$`Required?`)]
+  required_properties_dict=df_dict$Field[grepl(pattern = required_property_group,x = df_dict$`Required`)]
   required_properties=colnames(df[colnames(df)%in%required_properties_dict])
   
   #Clean up the data frame, if the required property section was left completely blank, it is assumed that the user did not have data for that row. Thus, it will only compare to rows that have complete data.
@@ -344,7 +344,7 @@ for (required_property_group in required_property_groups){
   
 #For the '_id' properties, make sure there are no illegal characters and it only has "Only the following characters can be included in the ID: English letters, Arabic numerals, period (.), hyphen (-), underscore (_), at symbol (@), and the pound sign (#)."
 for (required_property_group in required_property_groups){
-    required_properties_dict=df_dict$Field[grepl(pattern = required_property_group,x = df_dict$`Required?`)]
+    required_properties_dict=df_dict$Field[grepl(pattern = required_property_group,x = df_dict$`Required`)]
     required_properties=colnames(df[colnames(df)%in%required_properties_dict])  
   for (property in required_properties){
     if (property %in% colnames(df)){
@@ -363,7 +363,7 @@ for (required_property_group in required_property_groups){
 }
 
 #Define the required properties to everything.
-required_properties=df_dict$Field[!is.na(df_dict$`Required?`)]
+required_properties=df_dict$Field[!is.na(df_dict$`Required`)]
 
 #Check for white space issues in non-required columns. There is no enforcement that a column has to be completely filled or have values based on other related data inputs.
 for (property in all_properties[!all_properties%in%required_properties]){
